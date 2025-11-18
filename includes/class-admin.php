@@ -338,11 +338,32 @@ class Admin {
 			
 			if ( 'http_request_failed' === $error_code ) {
 				if ( strpos( $error_message, 'Could not connect' ) !== false || strpos( $error_message, 'Failed to connect' ) !== false ) {
+					// Build troubleshooting steps
+					$test_url = $target_url . 'wp-json/wpsbm/v1/handshake';
+					$troubleshooting = array();
+					
+					// Check if it's localhost
+					if ( $is_localhost ) {
+						$troubleshooting[] = __( 'Verify the destination site is running by opening it in your browser', 'wp-site-bridge-migration' );
+						$troubleshooting[] = sprintf(
+							/* translators: %s: Test URL */
+							__( 'Test the REST API endpoint directly: %s', 'wp-site-bridge-migration' ),
+							'<a href="' . esc_url( $test_url ) . '" target="_blank">' . esc_html( $test_url ) . '</a>'
+						);
+					}
+					
+					$troubleshooting[] = __( 'Ensure the plugin is activated on the destination site', 'wp-site-bridge-migration' );
+					$troubleshooting[] = __( 'Check that the URL and port number are correct', 'wp-site-bridge-migration' );
+					$troubleshooting[] = __( 'Verify there are no firewall or security restrictions blocking the connection', 'wp-site-bridge-migration' );
+					
+					$troubleshooting_text = '<ol><li>' . implode( '</li><li>', $troubleshooting ) . '</li></ol>';
+					
 					$user_friendly_message = sprintf(
-						/* translators: %1$s: Error message, %2$s: Target URL */
-						__( 'Cannot connect to destination site at %2$s. Error: %1$s. Please ensure: 1) The destination site is running, 2) The URL is correct, 3) The plugin is activated on the destination site, 4) There are no firewall restrictions.', 'wp-site-bridge-migration' ),
-						$error_message,
-						esc_html( $target_url )
+						/* translators: %1$s: Error message, %2$s: Target URL, %3$s: Troubleshooting steps */
+						__( 'Cannot connect to destination site at %2$s.<br><strong>Error:</strong> %1$s<br><br><strong>Troubleshooting Steps:</strong><br>%3$s', 'wp-site-bridge-migration' ),
+						esc_html( $error_message ),
+						'<strong>' . esc_html( $target_url ) . '</strong>',
+						$troubleshooting_text
 					);
 				} elseif ( strpos( $error_message, 'SSL' ) !== false || strpos( $error_message, 'certificate' ) !== false ) {
 					$user_friendly_message = sprintf(

@@ -319,8 +319,10 @@
 						$urlInput.prop('disabled', false);
 						$button.prop('disabled', false).text(originalButtonText);
 						
-						// Show error message
-						const errorMsg = response.data && response.data.message ? response.data.message : 'Connection validation failed.';
+						// Show error message (may contain HTML)
+						let errorMsg = response.data && response.data.message ? response.data.message : 'Connection validation failed.';
+						
+						// If error message contains HTML, ensure it's displayed correctly
 						WPSBMAdmin.showStatusMessage(errorMsg, 'error', $statusMessage);
 					}
 				},
