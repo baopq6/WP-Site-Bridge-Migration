@@ -105,6 +105,7 @@ try {
         "IMPROVEMENTS.md",
         "SECURITY_AUDIT.md",
         "CODE_AUDIT_REPORT.md",
+        "INSTALLATION_TROUBLESHOOTING.md",
         "build.sh",
         "build.ps1",
         "build.bat",
@@ -166,7 +167,11 @@ try {
     }
     
     # Compress to ZIP
-    Compress-Archive -Path "$PluginDir\*" -DestinationPath $OutputPath -CompressionLevel Optimal -Force
+    # Change to parent directory to include plugin folder name in ZIP
+    $OriginalLocation = Get-Location
+    Set-Location $TempDir
+    Compress-Archive -Path "wp-site-bridge-migration" -DestinationPath $OutputPath -CompressionLevel Optimal -Force
+    Set-Location $OriginalLocation
     
     # Get file size
     $FileInfo = Get-Item $OutputPath
