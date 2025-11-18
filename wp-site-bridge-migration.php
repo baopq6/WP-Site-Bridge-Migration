@@ -70,6 +70,30 @@ final class WPSiteBridge_Migration {
 	 * These require_once statements ensure backward compatibility when Composer is not used.
 	 */
 	private function load_dependencies() {
+		$required_files = array(
+			'includes/class-core.php',
+			'includes/class-admin.php',
+			'includes/class-api.php',
+			'includes/class-migrator.php',
+		);
+		
+		// Check if all required files exist
+		foreach ( $required_files as $file ) {
+			$file_path = WPSBM_PLUGIN_DIR . $file;
+			if ( ! file_exists( $file_path ) ) {
+				wp_die(
+					sprintf(
+						/* translators: %1$s: File path, %2$s: Plugin directory */
+						esc_html__( 'WP Site Bridge Migration: Required file not found: %1$s in %2$s. Please reinstall the plugin and ensure all files are extracted correctly.', 'wp-site-bridge-migration' ),
+						esc_html( $file ),
+						esc_html( WPSBM_PLUGIN_DIR )
+					),
+					esc_html__( 'Plugin Activation Error', 'wp-site-bridge-migration' ),
+					array( 'back_link' => true )
+				);
+			}
+		}
+		
 		// Load classes manually if Composer autoloader is not available
 		if ( ! class_exists( 'WPSiteBridge\Core' ) ) {
 			require_once WPSBM_PLUGIN_DIR . 'includes/class-core.php';
