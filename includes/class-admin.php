@@ -297,6 +297,7 @@ class Admin {
 		
 		// Check if URL is localhost or local IP
 		$is_localhost = false;
+		$is_docker_localhost = false;
 		$parsed_url = parse_url( $target_url );
 		if ( isset( $parsed_url['host'] ) ) {
 			$host = strtolower( $parsed_url['host'] );
@@ -310,6 +311,21 @@ class Admin {
 				preg_match( '/^10\./', $host ) ||
 				preg_match( '/^172\.(1[6-9]|2[0-9]|3[0-1])\./', $host )
 			);
+			
+			// Check if this is localhost in Docker environment
+			// Docker containers can't access other containers via localhost
+			if ( 'localhost' === $host || '127.0.0.1' === $host ) {
+				// Check if we're in Docker (common indicators)
+				$is_docker = (
+					file_exists( '/.dockerenv' ) ||
+					file_exists( '/proc/self/cgroup' ) && strpos( file_get_contents( '/proc/self/cgroup' ), 'docker' ) !== false ||
+					isset( $_SERVER['SERVER_SOFTWARE'] ) && strpos( $_SERVER['SERVER_SOFTWARE'], 'Docker' ) !== false
+				);
+				
+				if ( $is_docker ) {
+					$is_docker_localhost = true;
+				}
+			}
 		}
 		
 		// Prepare REST API endpoint
@@ -342,14 +358,43 @@ class Admin {
 					$test_url = $target_url . 'wp-json/wpsbm/v1/handshake';
 					$troubleshooting = array();
 					
-					// Check if it's localhost
-					if ( $is_localhost ) {
-						$troubleshooting[] = __( 'Verify the destination site is running by opening it in your browser', 'wp-site-bridge-migration' );
+					// Special handling for Docker localhost issue
+					if ( $is_docker_localhost ) {
+						// Try to get host IP
+						$host_ip = 'host.docker.internal';
+						if ( PHP_OS_FAMILY === 'Linux' ) {
+							// On Linux, try to get gateway IP
+							$gateway = @exec( 'ip route | grep default | awk \'{print $3}\'' );
+							if ( ! empty( $gateway ) ) {
+								$host_ip = $gateway;
+							} else {
+								$host_ip = '172.17.0.1'; // Default Docker bridge gateway
+							}
+						}
+						
+						// Replace localhost with host IP in URL
+						$docker_url = str_replace( 'localhost', $host_ip, $target_url );
+						$docker_url = str_replace( '127.0.0.1', $host_ip, $docker_url );
+						
 						$troubleshooting[] = sprintf(
-							/* translators: %s: Test URL */
-							__( 'Test the REST API endpoint directly: %s', 'wp-site-bridge-migration' ),
-							'<a href="' . esc_url( $test_url ) . '" target="_blank">' . esc_html( $test_url ) . '</a>'
+							/* translators: %1$s: Docker explanation, %2$s: Suggested URL */
+							__( '<strong>Docker Issue Detected:</strong> %1$s Try using this URL instead: <code>%2$s</code>', 'wp-site-bridge-migration' ),
+							__( 'Containers cannot access other containers via "localhost".', 'wp-site-bridge-migration' ),
+							esc_html( $docker_url )
 						);
+						$troubleshooting[] = __( 'Alternatively, use the host machine\'s IP address instead of "localhost"', 'wp-site-bridge-migration' );
+						$troubleshooting[] = __( 'On Windows/Mac: Use "host.docker.internal" as the hostname', 'wp-site-bridge-migration' );
+						$troubleshooting[] = __( 'On Linux: Use the Docker gateway IP (usually 172.17.0.1) or your host machine\'s IP', 'wp-site-bridge-migration' );
+					} else {
+						// Regular localhost troubleshooting
+						if ( $is_localhost ) {
+							$troubleshooting[] = __( 'Verify the destination site is running by opening it in your browser', 'wp-site-bridge-migration' );
+							$troubleshooting[] = sprintf(
+								/* translators: %s: Test URL */
+								__( 'Test the REST API endpoint directly: %s', 'wp-site-bridge-migration' ),
+								'<a href="' . esc_url( $test_url ) . '" target="_blank">' . esc_html( $test_url ) . '</a>'
+							);
+						}
 					}
 					
 					$troubleshooting[] = __( 'Ensure the plugin is activated on the destination site', 'wp-site-bridge-migration' );
