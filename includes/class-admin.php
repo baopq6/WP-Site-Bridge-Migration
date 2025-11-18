@@ -371,12 +371,21 @@ class Admin {
 			if ( isset( $error_data['message'] ) ) {
 				$error_message = $error_data['message'];
 			} elseif ( 403 === $response_code ) {
-				$error_message = __( 'Invalid token. Please check your migration key.', 'wp-site-bridge-migration' );
+				$error_message = __( 'Invalid token. Please check your migration key and ensure it matches the destination site.', 'wp-site-bridge-migration' );
 			} elseif ( 404 === $response_code ) {
-				$error_message = __( 'Destination site not found or plugin not activated.', 'wp-site-bridge-migration' );
+				$error_message = sprintf(
+					/* translators: %s: REST API URL */
+					__( 'Destination site not found or plugin not activated. Please verify: 1) The plugin is activated on the destination site, 2) The URL %s is accessible, 3) Permalinks are enabled (Settings > Permalinks).', 'wp-site-bridge-migration' ),
+					esc_html( $rest_url )
+				);
+			} elseif ( 500 === $response_code ) {
+				$error_message = __( 'Destination site returned a server error. Please check the destination site\'s error logs.', 'wp-site-bridge-migration' );
 			}
 			
-			wp_send_json_error( array( 'message' => $error_message ) );
+			wp_send_json_error( array( 
+				'message' => $error_message,
+				'response_code' => $response_code,
+			) );
 		}
 		
 		// Parse response
