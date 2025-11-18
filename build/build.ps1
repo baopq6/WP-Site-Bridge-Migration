@@ -167,10 +167,11 @@ try {
     }
     
     # Compress to ZIP
-    # Change to parent directory to include plugin folder name in ZIP
+    # WordPress expects files at root level, not in a subfolder
+    # So we compress the contents of the plugin folder, not the folder itself
     $OriginalLocation = Get-Location
-    Set-Location $TempDir
-    Compress-Archive -Path "wp-site-bridge-migration" -DestinationPath $OutputPath -CompressionLevel Optimal -Force
+    Set-Location $PluginDir
+    Compress-Archive -Path "*" -DestinationPath $OutputPath -CompressionLevel Optimal -Force
     Set-Location $OriginalLocation
     
     # Get file size
