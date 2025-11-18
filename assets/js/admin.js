@@ -18,7 +18,56 @@
 		init: function() {
 			this.bindEvents();
 			this.initRoleSwitcher();
+			this.initTabs();
 			this.checkConnectionStatus();
+		},
+		
+		/**
+		 * Initialize tabs
+		 */
+		initTabs: function() {
+			// Get current active tab from URL or default
+			const urlParams = new URLSearchParams(window.location.search);
+			const activeTab = urlParams.get('tab') || '';
+			
+			// Set active tab based on site role or URL param
+			const siteRole = $('input[name="wpsbm_site_role"]:checked').val() || 'source';
+			let defaultTab = siteRole;
+			
+			if (activeTab === 'help') {
+				defaultTab = 'help';
+			} else if (activeTab === 'destination' || activeTab === 'source') {
+				defaultTab = activeTab;
+			}
+			
+			// Show default tab
+			this.showTab(defaultTab);
+			
+			// Bind tab button clicks
+			$(document).on('click', '.wpsbm-tab-button', function(e) {
+				e.preventDefault();
+				const tab = $(this).data('tab');
+				WPSBMAdmin.showTab(tab);
+			});
+		},
+		
+		/**
+		 * Show specific tab
+		 */
+		showTab: function(tab) {
+			// Update tab buttons
+			$('.wpsbm-tab-button').removeClass('wpsbm-tab-active');
+			$('.wpsbm-tab-button[data-tab="' + tab + '"]').addClass('wpsbm-tab-active');
+			
+			// Update tab content
+			$('.wpsbm-tab-content').removeClass('wpsbm-tab-content-active');
+			$('.wpsbm-tab-content[data-tab="' + tab + '"]').addClass('wpsbm-tab-content-active');
+			
+			// Update URL without reload
+			if (history.pushState) {
+				const newUrl = window.location.pathname + (tab !== 'source' ? '?tab=' + tab : '');
+				window.history.pushState({path: newUrl}, '', newUrl);
+			}
 		},
 		
 		/**

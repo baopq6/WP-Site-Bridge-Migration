@@ -1,0 +1,3 @@
+# This file ensures the dist/ folder is tracked by Git
+# Build output ZIP files will be placed here
+

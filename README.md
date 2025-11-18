@@ -76,9 +76,61 @@ wp-site-bridge-migration/
 │   │   └── admin.css             # Admin styles
 │   └── js/
 │       └── admin.js              # Admin JavaScript
-└── templates/
-    └── admin-page.php            # Admin page template
+├── templates/
+│   └── admin-page.php            # Admin page template
+├── build/                        # Build scripts for creating distribution ZIP
+│   ├── build.sh                  # Linux/Mac build script
+│   ├── build.ps1                 # Windows PowerShell build script
+│   ├── build.bat                 # Windows batch build script
+│   └── README.md                 # Build instructions
+├── dist/                         # Output directory for build artifacts
+├── composer.json                 # Composer configuration (PSR-4 autoloading)
+└── readme.txt                    # WordPress.org plugin repository format
 ```
+
+### Development Setup
+
+The plugin uses **Composer** for dependency management and PSR-4 autoloading:
+
+```bash
+# Install Composer dependencies (if any)
+composer install
+
+# The plugin supports PSR-4 autoloading via Composer
+# Namespace: WPSiteBridge\ → includes/
+```
+
+### Building Distribution Package
+
+The plugin includes build scripts to create a clean, production-ready ZIP file:
+
+**Windows (PowerShell - Recommended):**
+```powershell
+cd build
+.\build.ps1
+```
+
+**Windows (Batch):**
+```cmd
+cd build
+build.bat
+```
+
+**Linux/Mac:**
+```bash
+cd build
+chmod +x build.sh
+./build.sh
+```
+
+The build script will create `wp-site-bridge-migration.zip` in the `dist/` folder, excluding:
+- Git files (`.git/`, `.github/`)
+- Development files (`composer.json`, `README.md`, etc.)
+- Build scripts (`build/`)
+- IDE files (`.vscode/`, `.idea/`)
+- OS files (`.DS_Store`, `Thumbs.db`)
+
+See `build/README.md` for detailed build instructions.
 
 ## 🔐 Security Features
 
@@ -215,6 +267,10 @@ The migration process consists of 5 phases:
 - ✅ Real-time progress tracking for search & replace operations
 - ✅ Improved error handling and recovery
 - ✅ Enhanced performance for large sites
+- ✅ **Composer Support**: Added PSR-4 autoloading support for future extensibility
+- ✅ **Build Scripts**: Professional build system for creating distribution packages (Windows/Linux/Mac)
+- ✅ **Help & Guide Tab**: Added comprehensive user guide in admin interface
+- ✅ **Professional Documentation**: Updated README and added WordPress.org format readme.txt
 
 ### 1.0.0
 - ✅ Phase 1: Plugin skeleton and admin UI

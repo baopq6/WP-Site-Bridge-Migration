@@ -1,0 +1,30 @@
+{
+	"name": "wp-site-bridge/wp-site-bridge-migration",
+	"description": "Migrate WordPress sites from one host to another directly without manual file transfers or database exports.",
+	"type": "wordpress-plugin",
+	"license": "GPL-2.0-or-later",
+	"authors": [
+		{
+			"name": "WP Site Bridge",
+			"email": "info@example.com"
+		}
+	],
+	"require": {
+		"php": ">=7.4"
+	},
+	"require-dev": {},
+	"autoload": {
+		"psr-4": {
+			"WPSiteBridge\\": "includes/"
+		}
+	},
+	"autoload-dev": {},
+	"config": {
+		"optimize-autoloader": true,
+		"preferred-install": "dist",
+		"sort-packages": true
+	},
+	"minimum-stability": "stable",
+	"prefer-stable": true
+}
+

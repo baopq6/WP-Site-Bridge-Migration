@@ -411,6 +411,137 @@
 	margin-left: 12px;
 }
 
+/* Tabs Navigation */
+.wpsbm-tabs-container {
+	padding: 0 !important;
+	background: transparent;
+	border: none;
+	box-shadow: none;
+	margin-bottom: 0;
+}
+
+.wpsbm-tabs-nav {
+	display: flex;
+	gap: 0;
+	border-bottom: 2px solid #dcdcde;
+	background: #fff;
+	border-radius: 4px 4px 0 0;
+}
+
+.wpsbm-tab-button {
+	background: transparent;
+	border: none;
+	padding: 16px 24px;
+	font-size: 14px;
+	font-weight: 600;
+	color: #646970;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	border-bottom: 3px solid transparent;
+	margin-bottom: -2px;
+	position: relative;
+}
+
+.wpsbm-tab-button:hover {
+	color: #2271b1;
+	background: #f6f7f7;
+}
+
+.wpsbm-tab-button.wpsbm-tab-active {
+	color: #2271b1;
+	border-bottom-color: #2271b1;
+	background: #fff;
+}
+
+.wpsbm-tab-content {
+	display: none;
+}
+
+.wpsbm-tab-content.wpsbm-tab-content-active {
+	display: block;
+}
+
+/* Help Container */
+.wpsbm-help-container {
+	padding: 0;
+}
+
+.wpsbm-help-container h3 {
+	font-size: 24px;
+	margin-bottom: 20px;
+	color: #1d2327;
+	font-weight: 600;
+}
+
+.wpsbm-help-container h4 {
+	font-size: 18px;
+	font-weight: 600;
+	margin-bottom: 12px;
+	color: #1d2327;
+	padding-bottom: 8px;
+	border-bottom: 2px solid #dcdcde;
+}
+
+.wpsbm-help-container p {
+	color: #646970;
+	line-height: 1.7;
+	font-size: 14px;
+	margin-bottom: 16px;
+}
+
+.wpsbm-help-container ol,
+.wpsbm-help-container ul {
+	margin-left: 20px;
+	color: #646970;
+	line-height: 1.8;
+	font-size: 14px;
+}
+
+.wpsbm-help-container li {
+	margin-bottom: 8px;
+}
+
+.wpsbm-help-container hr {
+	border: none;
+	border-top: 1px solid #dcdcde;
+	margin: 32px 0;
+}
+
+.wpsbm-guide-section {
+	margin-bottom: 32px;
+}
+
+.wpsbm-alert {
+	padding: 16px;
+	margin-bottom: 24px;
+	border-radius: 4px;
+	border-left: 4px solid;
+}
+
+.wpsbm-alert-warning {
+	background: #fcf9e8;
+	border-left-color: #dba617;
+}
+
+.wpsbm-alert strong {
+	display: block;
+	margin-bottom: 12px;
+	color: #1d2327;
+	font-size: 16px;
+}
+
+.wpsbm-alert ul {
+	list-style-type: disc;
+	margin-left: 24px;
+	margin-top: 8px;
+	color: #1d2327;
+	line-height: 1.8;
+}
+
+.wpsbm-alert li {
+	margin-bottom: 8px;
+}
+
 /* Responsive */
 @media (max-width: 782px) {
 	.wpsbm-card {
@@ -433,5 +564,20 @@
 	.wpsbm-button {
 		width: 100%;
 		text-align: center;
+	}
+	
+	.wpsbm-tabs-nav {
+		flex-direction: column;
+	}
+	
+	.wpsbm-tab-button {
+		border-bottom: 1px solid #dcdcde;
+		border-left: 3px solid transparent;
+		margin-bottom: 0;
+	}
+	
+	.wpsbm-tab-button.wpsbm-tab-active {
+		border-left-color: #2271b1;
+		border-bottom-color: #dcdcde;
 	}
 }

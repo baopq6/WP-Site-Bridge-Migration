@@ -19,6 +19,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// Load Composer autoloader if available
+if ( file_exists( __DIR__ . '/vendor/autoload.php' ) ) {
+	require_once __DIR__ . '/vendor/autoload.php';
+}
+
 // Define plugin constants
 define( 'WPSBM_VERSION', '1.1.0' );
 define( 'WPSBM_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
@@ -60,12 +65,24 @@ final class WPSiteBridge_Migration {
 	
 	/**
 	 * Load required files
+	 *
+	 * Note: If Composer autoloader is available, classes will be autoloaded via PSR-4.
+	 * These require_once statements ensure backward compatibility when Composer is not used.
 	 */
 	private function load_dependencies() {
-		require_once WPSBM_PLUGIN_DIR . 'includes/class-core.php';
-		require_once WPSBM_PLUGIN_DIR . 'includes/class-admin.php';
-		require_once WPSBM_PLUGIN_DIR . 'includes/class-api.php';
-		require_once WPSBM_PLUGIN_DIR . 'includes/class-migrator.php';
+		// Load classes manually if Composer autoloader is not available
+		if ( ! class_exists( 'WPSiteBridge\Core' ) ) {
+			require_once WPSBM_PLUGIN_DIR . 'includes/class-core.php';
+		}
+		if ( ! class_exists( 'WPSiteBridge\Admin' ) ) {
+			require_once WPSBM_PLUGIN_DIR . 'includes/class-admin.php';
+		}
+		if ( ! class_exists( 'WPSiteBridge\API' ) ) {
+			require_once WPSBM_PLUGIN_DIR . 'includes/class-api.php';
+		}
+		if ( ! class_exists( 'WPSiteBridge\Migrator' ) ) {
+			require_once WPSBM_PLUGIN_DIR . 'includes/class-migrator.php';
+		}
 	}
 	
 	/**

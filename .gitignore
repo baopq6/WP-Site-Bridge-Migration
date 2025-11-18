@@ -26,3 +26,20 @@ logs/
 *.tmp
 *.temp
 
+# Composer
+/vendor/
+composer.lock
+
+# Build files (output only, keep build scripts)
+*.zip
+dist/*.zip
+!build/*.sh
+!build/*.ps1
+!build/*.bat
+!build/README.md
+
+# Node modules (if using npm/yarn in future)
+node_modules/
+package-lock.json
+yarn.lock
+
