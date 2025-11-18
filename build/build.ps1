@@ -168,10 +168,26 @@ try {
     
     # Compress to ZIP
     # WordPress expects files at root level, not in a subfolder
-    # So we compress the contents of the plugin folder, not the folder itself
+    # Use .NET ZipFile to ensure proper path separators (forward slashes)
     $OriginalLocation = Get-Location
     Set-Location $PluginDir
-    Compress-Archive -Path "*" -DestinationPath $OutputPath -CompressionLevel Optimal -Force
+    
+    # Use .NET ZipFile for better cross-platform compatibility
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    $zip = [System.IO.Compression.ZipFile]::Open($OutputPath, [System.IO.Compression.ZipArchiveMode]::Create)
+    
+    # Add all files and folders recursively
+    Get-ChildItem -Path "." -Recurse -File | ForEach-Object {
+        $relativePath = $_.FullName.Replace($PluginDir, '').Replace('\', '/').TrimStart('/')
+        $entry = $zip.CreateEntry($relativePath)
+        $entryStream = $entry.Open()
+        $fileStream = [System.IO.File]::OpenRead($_.FullName)
+        $fileStream.CopyTo($entryStream)
+        $fileStream.Close()
+        $entryStream.Close()
+    }
+    
+    $zip.Dispose()
     Set-Location $OriginalLocation
     
     # Get file size
