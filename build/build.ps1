@@ -182,7 +182,8 @@ try {
     }
     
     # Create ZIP archive
-    $zip = [System.IO.Compression.ZipFile]::Open($OutputPath, [System.IO.Compression.ZipArchiveMode]::Create)
+    # ZipArchiveMode.Create = 1
+    $zip = [System.IO.Compression.ZipFile]::Open($OutputPath, 1)
     
     try {
         # Add all files and folders recursively
