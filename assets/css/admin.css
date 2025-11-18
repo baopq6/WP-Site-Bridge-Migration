@@ -1,0 +1,437 @@
+/**
+ * Admin styles for WP Site Bridge Migration
+ *
+ * @package WPSiteBridge
+ */
+
+/* Override Tailwind conflicts with WP Admin */
+.wpsbm-wrap * {
+	box-sizing: border-box;
+}
+
+.wpsbm-admin-container {
+	max-width: 1200px;
+	margin-top: 20px;
+}
+
+/* Card Styles */
+.wpsbm-card {
+	background: #fff;
+	border: 1px solid #ccd0d4;
+	box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+	padding: 24px;
+	margin-bottom: 20px;
+	border-radius: 4px;
+}
+
+.wpsbm-card-title {
+	font-size: 20px;
+	font-weight: 600;
+	margin: 0 0 12px 0;
+	padding: 0;
+	color: #1d2327;
+}
+
+.wpsbm-description {
+	color: #646970;
+	font-size: 14px;
+	line-height: 1.6;
+	margin: 0 0 20px 0;
+}
+
+/* Radio Button Group */
+.wpsbm-radio-group {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	margin-bottom: 20px;
+}
+
+.wpsbm-radio-label {
+	display: flex;
+	align-items: flex-start;
+	padding: 16px;
+	border: 2px solid #dcdcde;
+	border-radius: 4px;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	background: #f6f7f7;
+}
+
+.wpsbm-radio-label:hover {
+	border-color: #2271b1;
+	background: #f0f6fc;
+}
+
+.wpsbm-radio-label.wpsbm-radio-active {
+	border-color: #2271b1;
+	background: #f0f6fc;
+	box-shadow: 0 0 0 1px #2271b1;
+}
+
+.wpsbm-radio-label input[type="radio"] {
+	margin: 4px 12px 0 0;
+	flex-shrink: 0;
+	cursor: pointer;
+}
+
+.wpsbm-radio-content {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.wpsbm-radio-content strong {
+	display: block;
+	font-size: 16px;
+	color: #1d2327;
+	font-weight: 600;
+}
+
+.wpsbm-radio-desc {
+	font-size: 14px;
+	color: #646970;
+	line-height: 1.5;
+}
+
+/* Form Styles */
+.wpsbm-form-group {
+	margin-bottom: 24px;
+}
+
+.wpsbm-label {
+	display: block;
+	margin-bottom: 8px;
+	font-weight: 600;
+	font-size: 14px;
+	color: #1d2327;
+}
+
+.wpsbm-input,
+.wpsbm-textarea {
+	width: 100%;
+	max-width: 600px;
+	padding: 10px 12px;
+	border: 1px solid #8c8f94;
+	border-radius: 4px;
+	font-size: 14px;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+	background: #fff;
+	transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.wpsbm-input-large {
+	max-width: 100%;
+}
+
+.wpsbm-input:focus,
+.wpsbm-textarea:focus {
+	border-color: #2271b1;
+	box-shadow: 0 0 0 1px #2271b1;
+	outline: none;
+}
+
+.wpsbm-textarea {
+	resize: vertical;
+	min-height: 100px;
+	font-family: 'Courier New', Courier, monospace;
+	font-size: 13px;
+	line-height: 1.6;
+}
+
+.wpsbm-secret-key-display {
+	background: #f6f7f7;
+	cursor: text;
+	word-break: break-all;
+}
+
+.wpsbm-secret-key-display:focus {
+	background: #fff;
+}
+
+.wpsbm-form-group .description {
+	margin-top: 6px;
+	font-size: 13px;
+	color: #646970;
+	line-height: 1.5;
+}
+
+/* Button Styles */
+.wpsbm-button {
+	display: inline-block;
+	padding: 10px 20px;
+	background: #2271b1;
+	color: #fff;
+	border: none;
+	border-radius: 4px;
+	cursor: pointer;
+	font-size: 14px;
+	font-weight: 500;
+	text-decoration: none;
+	transition: background 0.2s, box-shadow 0.2s;
+	line-height: 1.5;
+}
+
+.wpsbm-button:hover {
+	background: #135e96;
+	color: #fff;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.wpsbm-button:active {
+	background: #0a4b78;
+}
+
+.wpsbm-button:disabled {
+	background: #c3c4c7;
+	cursor: not-allowed;
+	box-shadow: none;
+}
+
+.wpsbm-button-primary {
+	background: #2271b1;
+}
+
+.wpsbm-button-primary:hover {
+	background: #135e96;
+}
+
+.wpsbm-button-secondary {
+	background: #f6f7f7;
+	color: #2c3338;
+	border: 1px solid #dcdcde;
+}
+
+.wpsbm-button-secondary:hover {
+	background: #f0f0f1;
+	color: #1d2327;
+	border-color: #8c8f94;
+}
+
+.wpsbm-button-group {
+	display: flex;
+	gap: 12px;
+	align-items: center;
+	flex-wrap: wrap;
+}
+
+/* Status Messages */
+.wpsbm-status-message {
+	margin-top: 20px;
+	padding: 12px 16px;
+	border-radius: 4px;
+	border-left: 4px solid #2271b1;
+	background: #f0f6fc;
+}
+
+.wpsbm-status-message.wpsbm-status-success {
+	border-left-color: #00a32a;
+	background: #f0f6fc;
+	color: #1d2327;
+}
+
+.wpsbm-status-message.wpsbm-status-error {
+	border-left-color: #d63638;
+	background: #fcf0f1;
+	color: #1d2327;
+}
+
+.wpsbm-status-message.wpsbm-status-warning {
+	border-left-color: #dba617;
+	background: #fcf9e8;
+	color: #1d2327;
+}
+
+.wpsbm-status-message.wpsbm-status-info {
+	border-left-color: #2271b1;
+	background: #f0f6fc;
+	color: #1d2327;
+}
+
+/* Loading State */
+.wpsbm-loading {
+	opacity: 0.7;
+	pointer-events: none;
+	position: relative;
+}
+
+.wpsbm-loading::after {
+	content: '';
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	width: 16px;
+	height: 16px;
+	margin: -8px 0 0 -8px;
+	border: 2px solid #fff;
+	border-top-color: transparent;
+	border-radius: 50%;
+	animation: wpsbm-spin 0.6s linear infinite;
+}
+
+@keyframes wpsbm-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+/* Connected/Locked State */
+.wpsbm-locked {
+	background-color: #f0f0f1 !important;
+	cursor: not-allowed;
+	opacity: 0.8;
+}
+
+.wpsbm-connected-form {
+	position: relative;
+}
+
+.wpsbm-connected-form::before {
+	content: '✓';
+	position: absolute;
+	top: -10px;
+	right: -10px;
+	width: 24px;
+	height: 24px;
+	background: #00a32a;
+	color: #fff;
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 14px;
+	font-weight: bold;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+	z-index: 10;
+}
+
+.wpsbm-button.wpsbm-connected {
+	background: #00a32a !important;
+	color: #fff !important;
+	cursor: default;
+}
+
+.wpsbm-button.wpsbm-connected:hover {
+	background: #00a32a !important;
+}
+
+/* Input disabled state styling */
+.wpsbm-input:disabled,
+.wpsbm-textarea:disabled {
+	background-color: #f0f0f1;
+	cursor: not-allowed;
+	opacity: 0.8;
+}
+
+/* Migration Section */
+.wpsbm-migration-section {
+	border-top: 1px solid #ddd;
+	padding-top: 20px;
+}
+
+/* Progress List */
+.wpsbm-progress-list {
+	margin-top: 20px;
+}
+
+#wpsbm-remote-restore-progress {
+	border-top: 2px solid #ddd;
+	padding-top: 20px;
+}
+
+#wpsbm-remote-restore-progress h3 {
+	margin-bottom: 15px;
+	font-size: 16px;
+	color: #1d2327;
+	font-weight: 600;
+}
+
+.wpsbm-progress-item {
+	display: flex;
+	align-items: center;
+	padding: 12px 16px;
+	margin-bottom: 8px;
+	background: #f6f7f7;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	transition: all 0.3s ease;
+}
+
+.wpsbm-progress-item.wpsbm-progress-active {
+	background: #f0f6fc;
+	border-color: #2271b1;
+}
+
+.wpsbm-progress-item.wpsbm-progress-done {
+	background: #f0f6fc;
+	border-color: #00a32a;
+}
+
+.wpsbm-progress-item.wpsbm-progress-error {
+	background: #fcf0f1;
+	border-color: #d63638;
+}
+
+.wpsbm-progress-icon {
+	display: inline-block;
+	width: 24px;
+	height: 24px;
+	line-height: 24px;
+	text-align: center;
+	font-size: 16px;
+	font-weight: bold;
+	margin-right: 12px;
+	color: #646970;
+}
+
+.wpsbm-progress-item.wpsbm-progress-active .wpsbm-progress-icon {
+	color: #2271b1;
+	animation: wpsbm-spin 1s linear infinite;
+}
+
+.wpsbm-progress-item.wpsbm-progress-done .wpsbm-progress-icon {
+	color: #00a32a;
+}
+
+.wpsbm-progress-item.wpsbm-progress-error .wpsbm-progress-icon {
+	color: #d63638;
+}
+
+.wpsbm-progress-text {
+	flex: 1;
+	font-size: 14px;
+	color: #1d2327;
+	font-weight: 500;
+}
+
+.wpsbm-progress-size {
+	font-size: 13px;
+	color: #646970;
+	margin-left: 12px;
+}
+
+/* Responsive */
+@media (max-width: 782px) {
+	.wpsbm-card {
+		padding: 16px;
+	}
+	
+	.wpsbm-radio-group {
+		gap: 8px;
+	}
+	
+	.wpsbm-radio-label {
+		padding: 12px;
+	}
+	
+	.wpsbm-button-group {
+		flex-direction: column;
+		align-items: stretch;
+	}
+	
+	.wpsbm-button {
+		width: 100%;
+		text-align: center;
+	}
+}
