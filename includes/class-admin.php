@@ -295,6 +295,13 @@ class Admin {
 		$target_url = ! empty( $destination_url ) ? $destination_url : $key_data['url'];
 		$target_url = trailingslashit( $target_url );
 		
+		// Check if we're in Docker (common indicators)
+		$is_docker = (
+			file_exists( '/.dockerenv' ) ||
+			( file_exists( '/proc/self/cgroup' ) && strpos( @file_get_contents( '/proc/self/cgroup' ), 'docker' ) !== false ) ||
+			( isset( $_SERVER['SERVER_SOFTWARE'] ) && strpos( $_SERVER['SERVER_SOFTWARE'], 'Docker' ) !== false )
+		);
+		
 		// Check if URL is localhost or local IP
 		$is_localhost = false;
 		$is_docker_localhost = false;
@@ -314,16 +321,29 @@ class Admin {
 			
 			// Check if this is localhost in Docker environment
 			// Docker containers can't access other containers via localhost
-			if ( 'localhost' === $host || '127.0.0.1' === $host ) {
-				// Check if we're in Docker (common indicators)
-				$is_docker = (
-					file_exists( '/.dockerenv' ) ||
-					file_exists( '/proc/self/cgroup' ) && strpos( file_get_contents( '/proc/self/cgroup' ), 'docker' ) !== false ||
-					isset( $_SERVER['SERVER_SOFTWARE'] ) && strpos( $_SERVER['SERVER_SOFTWARE'], 'Docker' ) !== false
-				);
+			if ( $is_docker && ( 'localhost' === $host || '127.0.0.1' === $host ) ) {
+				$is_docker_localhost = true;
 				
-				if ( $is_docker ) {
-					$is_docker_localhost = true;
+				// Auto-replace localhost with Docker host IP
+				$host_ip = 'host.docker.internal';
+				if ( PHP_OS_FAMILY === 'Linux' ) {
+					// On Linux, try to get gateway IP
+					$gateway = @exec( 'ip route | grep default | awk \'{print $3}\'' );
+					if ( ! empty( $gateway ) && filter_var( $gateway, FILTER_VALIDATE_IP ) ) {
+						$host_ip = $gateway;
+					} else {
+						$host_ip = '172.17.0.1'; // Default Docker bridge gateway
+					}
+				}
+				
+				// Replace localhost with host IP
+				$target_url = str_replace( 'localhost', $host_ip, $target_url );
+				$target_url = str_replace( '127.0.0.1', $host_ip, $target_url );
+				
+				// Re-parse URL after replacement
+				$parsed_url = parse_url( $target_url );
+				if ( isset( $parsed_url['host'] ) ) {
+					$host = strtolower( $parsed_url['host'] );
 				}
 			}
 		}
@@ -360,31 +380,17 @@ class Admin {
 					
 					// Special handling for Docker localhost issue
 					if ( $is_docker_localhost ) {
-						// Try to get host IP
-						$host_ip = 'host.docker.internal';
-						if ( PHP_OS_FAMILY === 'Linux' ) {
-							// On Linux, try to get gateway IP
-							$gateway = @exec( 'ip route | grep default | awk \'{print $3}\'' );
-							if ( ! empty( $gateway ) ) {
-								$host_ip = $gateway;
-							} else {
-								$host_ip = '172.17.0.1'; // Default Docker bridge gateway
-							}
-						}
-						
-						// Replace localhost with host IP in URL
-						$docker_url = str_replace( 'localhost', $host_ip, $target_url );
-						$docker_url = str_replace( '127.0.0.1', $host_ip, $docker_url );
-						
 						$troubleshooting[] = sprintf(
-							/* translators: %1$s: Docker explanation, %2$s: Suggested URL */
-							__( '<strong>Docker Issue Detected:</strong> %1$s Try using this URL instead: <code>%2$s</code>', 'wp-site-bridge-migration' ),
+							/* translators: %1$s: Docker explanation, %2$s: Original URL, %3$s: Auto-corrected URL */
+							__( '<strong>Docker Issue Detected:</strong> %1$s The URL has been automatically corrected from <code>%2$s</code> to <code>%3$s</code>. If this still fails, try the following:', 'wp-site-bridge-migration' ),
 							__( 'Containers cannot access other containers via "localhost".', 'wp-site-bridge-migration' ),
-							esc_html( $docker_url )
+							esc_html( ! empty( $destination_url ) ? $destination_url : $key_data['url'] ),
+							esc_html( $target_url )
 						);
-						$troubleshooting[] = __( 'Alternatively, use the host machine\'s IP address instead of "localhost"', 'wp-site-bridge-migration' );
-						$troubleshooting[] = __( 'On Windows/Mac: Use "host.docker.internal" as the hostname', 'wp-site-bridge-migration' );
-						$troubleshooting[] = __( 'On Linux: Use the Docker gateway IP (usually 172.17.0.1) or your host machine\'s IP', 'wp-site-bridge-migration' );
+						$troubleshooting[] = __( 'Manually enter the correct URL in the "Destination Website URL (Optional)" field:', 'wp-site-bridge-migration' );
+						$troubleshooting[] = __( 'On Windows/Mac: Use "http://host.docker.internal:8094/"', 'wp-site-bridge-migration' );
+						$troubleshooting[] = __( 'On Linux: Use "http://172.17.0.1:8094/" or your Docker gateway IP', 'wp-site-bridge-migration' );
+						$troubleshooting[] = __( 'Or use your host machine\'s actual IP address', 'wp-site-bridge-migration' );
 					} else {
 						// Regular localhost troubleshooting
 						if ( $is_localhost ) {
