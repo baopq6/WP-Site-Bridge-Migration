@@ -785,14 +785,8 @@ class Migrator {
 			return false;
 		}
 		
-		$sql_content = file_get_contents( $sql_file );
-		
-		if ( false === $sql_content ) {
-			return false;
-		}
-		
-		// Split SQL into individual queries
-		$queries = $this->split_sql_queries( $sql_content );
+		// Use streaming parser for memory efficiency (handles large files)
+		$queries = $this->split_sql_queries_streaming( $sql_file );
 		
 		if ( empty( $queries ) ) {
 			return false;
@@ -830,7 +824,7 @@ class Migrator {
 	}
 	
 	/**
-	 * Split SQL content into individual queries
+	 * Split SQL content into individual queries (legacy method for small files)
 	 *
 	 * @param string $sql SQL content
 	 * @return array Array of SQL queries
@@ -868,6 +862,290 @@ class Migrator {
 		// Add last query if exists
 		if ( ! empty( trim( $current_query ) ) ) {
 			$queries[] = trim( $current_query );
+		}
+		
+		return array_filter( $queries );
+	}
+	
+	/**
+	 * Split SQL file into individual queries using streaming (memory efficient)
+	 *
+	 * Reads file in chunks to avoid loading entire file into memory.
+	 * Handles escaped quotes, multi-byte characters, and queries that span chunks.
+	 *
+	 * @param string $sql_file Path to SQL file
+	 * @return array Array of SQL queries
+	 */
+	private function split_sql_queries_streaming( $sql_file ) {
+		$queries = array();
+		$current_query = '';
+		
+		// State machine variables
+		$in_string = false;
+		$string_char = '';
+		$in_comment_single = false; // -- comment
+		$in_comment_multi = false;  // /* comment */
+		$comment_start_pos = 0;
+		
+		// Open file handle
+		$handle = fopen( $sql_file, 'r' );
+		if ( false === $handle ) {
+			return array();
+		}
+		
+		// Read file in chunks (1MB at a time for optimal balance)
+		$chunk_size = 1024 * 1024; // 1MB
+		$buffer = '';
+		$query_count = 0;
+		
+		while ( ! feof( $handle ) ) {
+			$chunk = fread( $handle, $chunk_size );
+			if ( false === $chunk ) {
+				break;
+			}
+			
+			$buffer .= $chunk;
+			$buffer_length = strlen( $buffer );
+			
+			// Process buffer character by character
+			$processed_length = 0;
+			
+			for ( $i = 0; $i < $buffer_length; $i++ ) {
+				$char = $buffer[ $i ];
+				$prev_char = ( $i > 0 ) ? $buffer[ $i - 1 ] : '';
+				$next_char = ( $i < $buffer_length - 1 ) ? $buffer[ $i + 1 ] : '';
+				
+				// Handle multi-line comments /* ... */
+				if ( ! $in_string && ! $in_comment_single && ! $in_comment_multi ) {
+					if ( $char === '/' && $next_char === '*' ) {
+						$in_comment_multi = true;
+						$comment_start_pos = $i;
+						$i++; // Skip next character
+						continue;
+					}
+				}
+				
+				if ( $in_comment_multi ) {
+					if ( $prev_char === '*' && $char === '/' ) {
+						$in_comment_multi = false;
+						continue; // Skip the closing */
+					}
+					continue; // Skip all characters inside multi-line comment
+				}
+				
+				// Handle single-line comments --
+				if ( ! $in_string && ! $in_comment_single && ! $in_comment_multi ) {
+					if ( $char === '-' && $next_char === '-' ) {
+						$in_comment_single = true;
+						$i++; // Skip next character
+						continue;
+					}
+				}
+				
+				if ( $in_comment_single ) {
+					if ( $char === "\n" || $char === "\r" ) {
+						$in_comment_single = false;
+					}
+					continue; // Skip all characters until newline
+				}
+				
+				// Handle string detection (only when not in comments)
+				if ( ! $in_string && ( "'" === $char || '"' === $char || '`' === $char ) ) {
+					$in_string = true;
+					$string_char = $char;
+					$current_query .= $char;
+					$processed_length = $i + 1;
+					continue;
+				}
+				
+				// Handle string closing
+				if ( $in_string ) {
+					// Check for escaped quote (backslash before quote)
+					// But also handle double escape: \\' means literal backslash + quote
+					$is_escaped = false;
+					$escape_count = 0;
+					
+					// Count consecutive backslashes before current position
+					for ( $j = $i - 1; $j >= 0 && $buffer[ $j ] === '\\'; $j-- ) {
+						$escape_count++;
+					}
+					
+					// If odd number of backslashes, the quote is escaped
+					// If even number (including 0), the quote is not escaped
+					$is_escaped = ( $escape_count % 2 === 1 );
+					
+					if ( $char === $string_char && ! $is_escaped ) {
+						$in_string = false;
+						$string_char = '';
+						$current_query .= $char;
+						$processed_length = $i + 1;
+						continue;
+					}
+					
+					// Still inside string, add character
+					$current_query .= $char;
+					$processed_length = $i + 1;
+					continue;
+				}
+				
+				// Not in string or comment, process normally
+				$current_query .= $char;
+				$processed_length = $i + 1;
+				
+				// Check for end of query (semicolon)
+				if ( ';' === $char ) {
+					$query = trim( $current_query );
+					
+					// Only add non-empty queries that aren't just comments
+					if ( ! empty( $query ) && '--' !== substr( $query, 0, 2 ) ) {
+						$queries[] = $query;
+						$query_count++;
+						
+						// Free memory periodically (every 1000 queries)
+						if ( $query_count % 1000 === 0 ) {
+							gc_collect_cycles();
+						}
+					}
+					
+					$current_query = '';
+				}
+			}
+			
+			// Keep unprocessed part of buffer (in case query/string/comment spans chunks)
+			// Strategy: Keep everything that's part of an incomplete state
+			if ( $in_string || $in_comment_single || $in_comment_multi || ! empty( $current_query ) ) {
+				// We need to keep the incomplete part for next chunk
+				// The safest approach: keep current_query + any trailing characters
+				// But we need to find where current_query starts in the buffer
+				
+				if ( ! empty( $current_query ) ) {
+					// Find the position where current_query starts in buffer
+					// Search backwards from end, looking for start of current_query
+					$query_prefix = substr( $current_query, 0, min( 200, strlen( $current_query ) ) );
+					$query_start_pos = strrpos( $buffer, $query_prefix );
+					
+					if ( false !== $query_start_pos ) {
+						// Keep from query start to end of buffer
+						$buffer = substr( $buffer, $query_start_pos );
+					} else {
+						// Fallback: if we can't find it, keep last 50KB (very safe)
+						// This handles edge cases where query might have been modified
+						$buffer = substr( $buffer, max( 0, $buffer_length - 51200 ) );
+					}
+				} elseif ( $in_comment_multi ) {
+					// Keep from comment start
+					$buffer = substr( $buffer, max( 0, $comment_start_pos ) );
+				} elseif ( $in_comment_single ) {
+					// Single-line comment: keep from last newline
+					$last_newline = strrpos( $buffer, "\n" );
+					if ( false !== $last_newline ) {
+						$buffer = substr( $buffer, $last_newline + 1 );
+					}
+					// If no newline found, keep entire buffer (comment spans chunks)
+				} elseif ( $in_string ) {
+					// String spans chunks: find where string started
+					// Look for the opening quote of current string
+					$quote_pos = strrpos( $buffer, $string_char );
+					if ( false !== $quote_pos ) {
+						// Check if it's the opening quote (not escaped)
+						$before_quote = ( $quote_pos > 0 ) ? $buffer[ $quote_pos - 1 ] : '';
+						if ( $before_quote !== '\\' ) {
+							$buffer = substr( $buffer, $quote_pos );
+						} else {
+							// Escaped quote, keep more context
+							$buffer = substr( $buffer, max( 0, $quote_pos - 100 ) );
+						}
+					} else {
+						// Can't find quote, keep last 10KB to be safe
+						$buffer = substr( $buffer, max( 0, $buffer_length - 10240 ) );
+					}
+				}
+			} else {
+				// All processed, clear buffer
+				$buffer = '';
+			}
+		}
+		
+		// Close file handle
+		fclose( $handle );
+		
+		// Process remaining buffer
+		if ( ! empty( $buffer ) ) {
+			// Process remaining buffer with same logic
+			$buffer_length = strlen( $buffer );
+			for ( $i = 0; $i < $buffer_length; $i++ ) {
+				$char = $buffer[ $i ];
+				$prev_char = ( $i > 0 ) ? $buffer[ $i - 1 ] : '';
+				
+				// Handle comments (same logic as above)
+				if ( ! $in_string && ! $in_comment_single && ! $in_comment_multi ) {
+					if ( $char === '/' && isset( $buffer[ $i + 1 ] ) && $buffer[ $i + 1 ] === '*' ) {
+						$in_comment_multi = true;
+						$i++;
+						continue;
+					}
+					if ( $char === '-' && isset( $buffer[ $i + 1 ] ) && $buffer[ $i + 1 ] === '-' ) {
+						$in_comment_single = true;
+						$i++;
+						continue;
+					}
+				}
+				
+				if ( $in_comment_multi ) {
+					if ( $prev_char === '*' && $char === '/' ) {
+						$in_comment_multi = false;
+					}
+					continue;
+				}
+				
+				if ( $in_comment_single ) {
+					if ( $char === "\n" || $char === "\r" ) {
+						$in_comment_single = false;
+					}
+					continue;
+				}
+				
+				// Handle strings
+				if ( ! $in_string && ( "'" === $char || '"' === $char || '`' === $char ) ) {
+					$in_string = true;
+					$string_char = $char;
+					$current_query .= $char;
+					continue;
+				}
+				
+				if ( $in_string ) {
+					$escape_count = 0;
+					for ( $j = $i - 1; $j >= 0 && $buffer[ $j ] === '\\'; $j-- ) {
+						$escape_count++;
+					}
+					$is_escaped = ( $escape_count % 2 === 1 );
+					
+					if ( $char === $string_char && ! $is_escaped ) {
+						$in_string = false;
+						$string_char = '';
+					}
+					$current_query .= $char;
+					continue;
+				}
+				
+				$current_query .= $char;
+				
+				if ( ';' === $char ) {
+					$query = trim( $current_query );
+					if ( ! empty( $query ) && '--' !== substr( $query, 0, 2 ) ) {
+						$queries[] = $query;
+					}
+					$current_query = '';
+				}
+			}
+		}
+		
+		// Add last query if exists (might not have semicolon)
+		if ( ! empty( trim( $current_query ) ) ) {
+			$query = trim( $current_query );
+			if ( ! empty( $query ) && '--' !== substr( $query, 0, 2 ) ) {
+				$queries[] = $query;
+			}
 		}
 		
 		return array_filter( $queries );
@@ -1264,6 +1542,316 @@ class Migrator {
 		}
 		
 		return true;
+	}
+	
+	/**
+	 * Run search and replace with batch processing
+	 *
+	 * Processes database in small batches to avoid timeout.
+	 * Returns status for next batch or completion.
+	 *
+	 * @param string $old_url Old URL to replace
+	 * @param string $new_url New URL to replace with
+	 * @param string $table_name Optional: specific table to process
+	 * @param int    $offset Optional: offset for chunk processing
+	 * @return array Status array with 'completed', 'next_table', 'next_offset', 'progress'
+	 */
+	public function run_search_replace_batch( $old_url, $new_url, $table_name = null, $offset = 0 ) {
+		global $wpdb;
+		
+		if ( empty( $old_url ) || empty( $new_url ) ) {
+			return array( 'error' => 'URLs required' );
+		}
+		
+		// Normalize URLs
+		$old_url = untrailingslashit( $old_url );
+		$new_url = untrailingslashit( $new_url );
+		
+		if ( $old_url === $new_url ) {
+			return array( 'completed' => true );
+		}
+		
+		// Also handle URLs with trailing slashes
+		$old_url_variants = array(
+			$old_url,
+			trailingslashit( $old_url ),
+			$old_url . '/',
+		);
+		
+		$new_url_variants = array(
+			$new_url,
+			trailingslashit( $new_url ),
+			$new_url . '/',
+		);
+		
+		// Get all tables
+		$tables = $wpdb->get_results( 'SHOW TABLES', ARRAY_N );
+		
+		if ( empty( $tables ) ) {
+			return array( 'error' => 'No tables found' );
+		}
+		
+		// Find starting point
+		$start_index = 0;
+		if ( $table_name ) {
+			foreach ( $tables as $index => $table ) {
+				$table_name_clean = str_replace( '`', '', $table[0] );
+				if ( $table_name_clean === $table_name ) {
+					$start_index = $index;
+					break;
+				}
+			}
+		}
+		
+		// Process one table at a time (or continue with current table)
+		$chunk_size = 50; // Smaller chunks for batch processing
+		$max_execution_time = 25; // 25 seconds per batch (leave buffer for server overhead)
+		$start_time = time();
+		
+		for ( $i = $start_index; $i < count( $tables ); $i++ ) {
+			$table = $tables[ $i ];
+			$table_name_clean = str_replace( '`', '', $table[0] );
+			
+			// Check execution time
+			if ( ( time() - $start_time ) > $max_execution_time ) {
+				return array(
+					'completed'   => false,
+					'next_table'  => $table_name_clean,
+					'next_offset' => $offset,
+					'progress'    => sprintf(
+						/* translators: %1$d: Current table number, %2$d: Total tables, %3$s: Table name */
+						__( 'Processing table %1$d of %2$d: %3$s', 'wp-site-bridge-migration' ),
+						$i + 1,
+						count( $tables ),
+						$table_name_clean
+					),
+				);
+			}
+			
+			// Process this table
+			$result = $this->process_table_search_replace(
+				$table_name_clean,
+				$old_url,
+				$new_url,
+				$old_url_variants,
+				$new_url_variants,
+				$offset,
+				$chunk_size,
+				$max_execution_time - ( time() - $start_time )
+			);
+			
+			if ( isset( $result['error'] ) ) {
+				return $result;
+			}
+			
+			// If table not completed, return for next batch
+			if ( ! $result['completed'] ) {
+				return array(
+					'completed'   => false,
+					'next_table'  => $table_name_clean,
+					'next_offset' => $result['next_offset'],
+					'progress'    => sprintf(
+						/* translators: %1$d: Current table number, %2$d: Total tables, %3$s: Table name, %4$d: Start row, %5$d: End row */
+						__( 'Processing table %1$d of %2$d: %3$s (Rows %4$d-%5$d)', 'wp-site-bridge-migration' ),
+						$i + 1,
+						count( $tables ),
+						$table_name_clean,
+						$offset + 1,
+						$result['next_offset']
+					),
+				);
+			}
+			
+			// Table completed, reset offset for next table
+			$offset = 0;
+		}
+		
+		// All tables completed
+		return array( 'completed' => true );
+	}
+	
+	/**
+	 * Process one table for search and replace
+	 *
+	 * @param string $table_name Table name
+	 * @param string $old_url Old URL
+	 * @param string $new_url New URL
+	 * @param array  $old_url_variants Array of old URL variants
+	 * @param array  $new_url_variants Array of new URL variants
+	 * @param int    $offset Starting offset
+	 * @param int    $chunk_size Chunk size
+	 * @param int    $time_remaining Remaining execution time in seconds
+	 * @return array Status array
+	 */
+	private function process_table_search_replace( $table_name, $old_url, $new_url, $old_url_variants, $new_url_variants, $offset, $chunk_size, $time_remaining ) {
+		global $wpdb;
+		
+		// Skip if table doesn't exist
+		if ( ! $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) ) ) {
+			return array( 'completed' => true );
+		}
+		
+		// Get columns
+		$columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$table_name}`" );
+		if ( empty( $columns ) ) {
+			return array( 'completed' => true );
+		}
+		
+		// Get primary key
+		$primary_key = null;
+		$keys = $wpdb->get_results( "SHOW KEYS FROM `{$table_name}` WHERE Key_name = 'PRIMARY'", ARRAY_A );
+		if ( ! empty( $keys ) && isset( $keys[0]['Column_name'] ) ) {
+			$primary_key = $keys[0]['Column_name'];
+		}
+		
+		// Build column info cache (only once per table)
+		static $column_cache = array();
+		$cache_key = $table_name;
+		
+		if ( ! isset( $column_cache[ $cache_key ] ) ) {
+			$column_info_cache = array();
+			foreach ( $columns as $col ) {
+				$col_info = $wpdb->get_row( $wpdb->prepare( "SHOW COLUMNS FROM `{$table_name}` WHERE Field = %s", $col ), ARRAY_A );
+				if ( $col_info ) {
+					$column_info_cache[ $col ] = $col_info;
+				}
+			}
+			$column_cache[ $cache_key ] = $column_info_cache;
+		} else {
+			$column_info_cache = $column_cache[ $cache_key ];
+		}
+		
+		$batch_start_time = time();
+		
+		// Process chunks until time runs out or table is complete
+		while ( ( time() - $batch_start_time ) < $time_remaining ) {
+			// Get chunk of rows using LIMIT and OFFSET
+			// CRITICAL: Use exact LIMIT and OFFSET to avoid duplicates or skips
+			$rows = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT * FROM `{$table_name}` LIMIT %d OFFSET %d",
+					$chunk_size,
+					$offset
+				),
+				ARRAY_A
+			);
+			
+			if ( empty( $rows ) ) {
+				// No more rows, table is complete
+				return array( 'completed' => true );
+			}
+			
+			// Process each row in this chunk
+			foreach ( $rows as $row ) {
+				// Get row identifier
+				$row_identifier = null;
+				$row_identifier_column = null;
+				
+				if ( $primary_key && isset( $row[ $primary_key ] ) ) {
+					$row_identifier = $row[ $primary_key ];
+					$row_identifier_column = $primary_key;
+				} else {
+					// Use first column as identifier
+					$first_column = reset( $columns );
+					if ( isset( $row[ $first_column ] ) ) {
+						$row_identifier = $row[ $first_column ];
+						$row_identifier_column = $first_column;
+					}
+				}
+				
+				if ( null === $row_identifier || null === $row_identifier_column ) {
+					continue;
+				}
+				
+				// Process each column in this row
+				foreach ( $columns as $column ) {
+					// Skip if column info not found
+					if ( ! isset( $column_info_cache[ $column ] ) ) {
+						continue;
+					}
+					
+					$column_info = $column_info_cache[ $column ];
+					
+					// Skip if column is primary key or auto-increment
+					if ( 'PRI' === $column_info['Key'] || 'auto_increment' === $column_info['Extra'] ) {
+						continue;
+					}
+					
+					// Skip numeric-only columns
+					$column_type = strtolower( $column_info['Type'] );
+					if ( preg_match( '/^(tinyint|smallint|mediumint|int|bigint|float|double|decimal|numeric)/', $column_type ) ) {
+						continue;
+					}
+					
+					// Get current value
+					$current_value = isset( $row[ $column ] ) ? $row[ $column ] : null;
+					
+					// Skip if value is null or empty
+					if ( null === $current_value || '' === $current_value ) {
+						continue;
+					}
+					
+					// Process value with recursive search replace
+					$new_value = $this->recursive_search_replace( $current_value, $old_url, $new_url );
+					
+					// Also handle variants
+					foreach ( $old_url_variants as $index => $old_variant ) {
+						if ( $old_variant !== $old_url ) {
+							$new_value = $this->recursive_search_replace( $new_value, $old_variant, $new_url_variants[ $index ] );
+						}
+					}
+					
+					// Check if value changed
+					if ( $current_value !== $new_value ) {
+						// Determine format for update
+						$format = '%s';
+						if ( preg_match( '/^(tinyint|smallint|mediumint|int|bigint)/', $column_type ) ) {
+							$format = '%d';
+						} elseif ( preg_match( '/^(float|double|decimal|numeric)/', $column_type ) ) {
+							$format = '%f';
+						}
+						
+						// Serialize if needed (for complex data types)
+						if ( is_array( $new_value ) || is_object( $new_value ) ) {
+							$new_value = serialize( $new_value );
+						}
+						
+						// Update database
+						$wpdb->update(
+							$table_name,
+							array( $column => $new_value ),
+							array( $row_identifier_column => $row_identifier ),
+							array( $format ),
+							array( '%s' )
+						);
+					}
+				}
+			}
+			
+			// Move to next chunk
+			$offset += $chunk_size;
+			
+			// Check if we've processed all rows
+			if ( count( $rows ) < $chunk_size ) {
+				// Last chunk was smaller, table is complete
+				return array( 'completed' => true );
+			}
+			
+			// Check time limit
+			if ( ( time() - $batch_start_time ) >= $time_remaining ) {
+				// Time's up, return for next batch
+				return array(
+					'completed'   => false,
+					'next_offset' => $offset,
+				);
+			}
+		}
+		
+		// Time ran out, return for next batch
+		return array(
+			'completed'   => false,
+			'next_offset' => $offset,
+		);
 	}
 	
 	/**

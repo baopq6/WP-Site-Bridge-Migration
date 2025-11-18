@@ -665,7 +665,7 @@
 			// Get source URL (old URL)
 			const sourceUrl = window.location.origin;
 			
-			// Step 1: Finalize migration (Search & Replace)
+			// Step 1: Finalize migration (Search & Replace) - Using Batch Processing
 			const $finalizeItem = $('.wpsbm-progress-item[data-step="finalize"]');
 			if ($finalizeItem.length === 0) {
 				// Create finalize progress item if it doesn't exist
@@ -674,6 +674,7 @@
 					'<div class="wpsbm-progress-item" data-step="finalize">' +
 					'<span class="wpsbm-progress-icon">○</span> ' +
 					'<span class="wpsbm-progress-text">Finalizing Migration (Search & Replace)</span>' +
+					'<span class="wpsbm-progress-detail" style="display: block; font-size: 12px; color: #666; margin-top: 4px;"></span>' +
 					'</div>'
 				);
 			}
@@ -682,49 +683,89 @@
 			$finalize.addClass('wpsbm-progress-active');
 			$finalize.find('.wpsbm-progress-icon').text('⟳');
 			
-			const finalizeApiUrl = targetUrl.replace(/\/$/, '') + '/wp-json/wpsbm/v1/finalize_migration';
+			// Start batch processing
+			WPSBMAdmin.finalizeMigrationBatch(targetUrl, destinationToken, sourceUrl);
+		},
+		
+		/**
+		 * Finalize migration using batch processing (recursive AJAX)
+		 */
+		finalizeMigrationBatch: function(destinationUrl, destinationToken, sourceUrl, tableName, offset) {
+			const self = this;
+			tableName = tableName || null;
+			offset = offset || 0;
 			
+			const $finalize = $('.wpsbm-progress-item[data-step="finalize"]');
+			const $progressDetail = $finalize.find('.wpsbm-progress-detail');
+			
+			const finalizeApiUrl = destinationUrl.replace(/\/$/, '') + '/wp-json/wpsbm/v1/finalize_migration_batch';
+			
+			// Prepare request data
+			const requestData = {
+				old_url: sourceUrl,
+				token: destinationToken
+			};
+			
+			if (tableName) {
+				requestData.table_name = tableName;
+			}
+			if (offset > 0) {
+				requestData.offset = offset;
+			}
+			
+			// Make AJAX request
 			$.ajax({
 				url: finalizeApiUrl,
 				type: 'POST',
-				data: {
-					old_url: sourceUrl,
-					token: destinationToken
-				},
-				timeout: 600000, // 10 minutes
+				data: requestData,
+				timeout: 35000, // 35 seconds (slightly more than batch time)
 				success: function(response) {
-					if (response.success) {
+					// Update progress detail
+					if (response.progress) {
+						$progressDetail.text(response.progress).show();
+					}
+					
+					// Check if completed
+					if (response.completed) {
+						// All done!
 						$finalize.removeClass('wpsbm-progress-active').addClass('wpsbm-progress-done');
 						$finalize.find('.wpsbm-progress-icon').text('✓');
+						$progressDetail.hide();
 						
 						// Step 2: Remote cleanup
-						WPSBMAdmin.cleanupRemote(targetUrl, destinationToken, function() {
+						WPSBMAdmin.cleanupRemote(destinationUrl, destinationToken, function() {
 							// Step 3: Local cleanup
 							WPSBMAdmin.cleanupLocal(function() {
 								// All done!
-								WPSBMAdmin.showMigrationSuccess(targetUrl);
+								WPSBMAdmin.showMigrationSuccess(destinationUrl);
 							});
 						});
 					} else {
-						$finalize.removeClass('wpsbm-progress-active').addClass('wpsbm-progress-error');
-						$finalize.find('.wpsbm-progress-icon').text('✗');
-						
-						WPSBMAdmin.showStatusMessage(
-							'Finalization failed: ' + (response.message || 'Unknown error'),
-							'error',
-							$('#wpsbm-migration-status')
-						);
+						// Not completed, continue with next batch
+						// Small delay to prevent overwhelming the server
+						setTimeout(function() {
+							self.finalizeMigrationBatch(
+								destinationUrl,
+								destinationToken,
+								sourceUrl,
+								response.next_table || null,
+								response.next_offset || 0
+							);
+						}, 100); // 100ms delay between batches
 					}
 				},
 				error: function(xhr, status, error) {
 					$finalize.removeClass('wpsbm-progress-active').addClass('wpsbm-progress-error');
 					$finalize.find('.wpsbm-progress-icon').text('✗');
+					$progressDetail.hide();
 					
 					let errorMsg = 'Finalization failed: ' + error;
 					if (xhr.responseJSON && xhr.responseJSON.message) {
 						errorMsg = 'Finalization failed: ' + xhr.responseJSON.message;
+					} else if (xhr.responseJSON && xhr.responseJSON.error) {
+						errorMsg = 'Finalization failed: ' + xhr.responseJSON.error;
 					} else if (status === 'timeout') {
-						errorMsg = 'Finalization timed out. The operation may still be processing.';
+						errorMsg = 'Finalization batch timed out. Please try again.';
 					}
 					
 					WPSBMAdmin.showStatusMessage(errorMsg, 'error', $('#wpsbm-migration-status'));

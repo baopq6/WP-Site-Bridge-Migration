@@ -176,6 +176,47 @@ class API {
 		
 		register_rest_route(
 			'wpsbm/v1',
+			'/finalize_migration_batch',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( $this, 'handle_finalize_migration_batch' ),
+				'permission_callback' => array( $this, 'finalize_migration_permission_check' ),
+				'args'                => array(
+					'old_url' => array(
+						'required'          => true,
+						'type'              => 'string',
+						'sanitize_callback' => 'esc_url_raw',
+						'validate_callback' => function( $param ) {
+							return ! empty( $param ) && filter_var( $param, FILTER_VALIDATE_URL );
+						},
+					),
+					'table_name' => array(
+						'required' => false,
+						'type'     => 'string',
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+					'offset' => array(
+						'required' => false,
+						'type'     => 'integer',
+						'default'  => 0,
+						'validate_callback' => function( $param ) {
+							return is_numeric( $param ) && $param >= 0;
+						},
+					),
+					'token'   => array(
+						'required'          => true,
+						'type'              => 'string',
+						'sanitize_callback' => 'sanitize_text_field',
+						'validate_callback' => function( $param ) {
+							return ! empty( $param );
+						},
+					),
+				),
+			)
+		);
+		
+		register_rest_route(
+			'wpsbm/v1',
 			'/cleanup',
 			array(
 				'methods'             => 'POST',
@@ -570,6 +611,55 @@ class API {
 			),
 			200
 		);
+	}
+	
+	/**
+	 * Handle finalize_migration_batch request
+	 *
+	 * Performs search & replace in batches to avoid timeout
+	 *
+	 * @param WP_REST_Request $request Request object
+	 * @return WP_REST_Response|WP_Error Response object
+	 */
+	public function handle_finalize_migration_batch( $request ) {
+		// If we reach here, the token has been validated by permission_callback
+		
+		// Get parameters
+		$old_url = $request->get_param( 'old_url' );
+		$new_url = get_site_url();
+		$table_name = $request->get_param( 'table_name' );
+		$offset = (int) $request->get_param( 'offset' );
+		
+		// Increase time limit and memory limit for this batch
+		@set_time_limit( 30 ); // 30 seconds per batch
+		@ini_set( 'memory_limit', '256M' );
+		
+		// Get migrator instance
+		$migrator = Migrator::get_instance();
+		
+		// Run batch search and replace
+		$result = $migrator->run_search_replace_batch( $old_url, $new_url, $table_name, $offset );
+		
+		if ( isset( $result['error'] ) ) {
+			return new \WP_Error(
+				'search_replace_failed',
+				$result['error'],
+				array( 'status' => 500 )
+			);
+		}
+		
+		// If completed, flush rewrite rules and update options
+		if ( isset( $result['completed'] ) && $result['completed'] ) {
+			// Flush rewrite rules to fix permalinks
+			flush_rewrite_rules( false );
+			
+			// Update site URL in options
+			update_option( 'siteurl', $new_url );
+			update_option( 'home', $new_url );
+		}
+		
+		// Return status for next batch or completion
+		return new \WP_REST_Response( $result, 200 );
 	}
 	
 	/**
