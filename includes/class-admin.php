@@ -219,7 +219,13 @@ class Admin {
 		// Check if site role is destination
 		$site_role = get_option( 'wpsbm_site_role', 'source' );
 		if ( 'destination' !== $site_role ) {
-			wp_send_json_error( array( 'message' => __( 'This action is only available for destination sites.', 'wp-site-bridge-migration' ) ) );
+			wp_send_json_error( array( 
+				'message' => sprintf(
+					/* translators: %s: Current site role */
+					__( 'This action is only available for destination sites. Current role: %s. Please go to "This Site Is" section above and save the role as "Destination Website" first.', 'wp-site-bridge-migration' ),
+					esc_html( $site_role )
+				)
+			) );
 		}
 		
 		// Generate migration key
