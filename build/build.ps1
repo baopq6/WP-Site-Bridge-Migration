@@ -173,21 +173,36 @@ try {
     Set-Location $PluginDir
     
     # Use .NET ZipFile for better cross-platform compatibility
+    # This ensures forward slashes in paths for Linux compatibility
     Add-Type -AssemblyName System.IO.Compression.FileSystem
-    $zip = [System.IO.Compression.ZipFile]::Open($OutputPath, [System.IO.Compression.ZipArchiveMode]::Create)
     
-    # Add all files and folders recursively
-    Get-ChildItem -Path "." -Recurse -File | ForEach-Object {
-        $relativePath = $_.FullName.Replace($PluginDir, '').Replace('\', '/').TrimStart('/')
-        $entry = $zip.CreateEntry($relativePath)
-        $entryStream = $entry.Open()
-        $fileStream = [System.IO.File]::OpenRead($_.FullName)
-        $fileStream.CopyTo($entryStream)
-        $fileStream.Close()
-        $entryStream.Close()
+    # Remove existing ZIP if it exists
+    if (Test-Path $OutputPath) {
+        Remove-Item $OutputPath -Force
     }
     
-    $zip.Dispose()
+    # Create ZIP archive
+    $zip = [System.IO.Compression.ZipFile]::Open($OutputPath, [System.IO.Compression.ZipArchiveMode]::Create)
+    
+    try {
+        # Add all files and folders recursively
+        Get-ChildItem -Path "." -Recurse -File | ForEach-Object {
+            # Get relative path and convert backslashes to forward slashes
+            $relativePath = $_.FullName.Replace($PluginDir, '').Replace('\', '/').TrimStart('/')
+            
+            # Create entry in ZIP
+            $entry = $zip.CreateEntry($relativePath)
+            
+            # Copy file content
+            $entryStream = $entry.Open()
+            $fileStream = [System.IO.File]::OpenRead($_.FullName)
+            $fileStream.CopyTo($entryStream)
+            $fileStream.Close()
+            $entryStream.Close()
+        }
+    } finally {
+        $zip.Dispose()
+    }
     Set-Location $OriginalLocation
     
     # Get file size
