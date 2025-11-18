@@ -123,6 +123,9 @@ $show_notice = isset( $_GET['wpsbm_updated'] ) && '1' === $_GET['wpsbm_updated']
 						<?php esc_html_e( 'Copy Key', 'wp-site-bridge-migration' ); ?>
 					</button>
 				</div>
+				
+				<!-- Status message container for destination -->
+				<div id="wpsbm-destination-status" class="wpsbm-status-message" style="display: none; margin-top: 15px;"></div>
 			</div>
 			
 			<!-- Source Website UI -->
