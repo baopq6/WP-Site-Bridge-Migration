@@ -1001,12 +1001,31 @@
 		 */
 		showStatusMessage: function(message, type, $container) {
 			type = type || 'info';
-			$container = $container || $('#wpsbm-connection-status');
+			
+			// Try to find appropriate container
+			if (!$container || $container.length === 0) {
+				// Try destination status first
+				$container = $('#wpsbm-destination-status');
+				if ($container.length === 0) {
+					// Try source connection status
+					$container = $('#wpsbm-connection-status');
+				}
+				if ($container.length === 0) {
+					// Create a temporary status message container
+					$container = $('<div id="wpsbm-temp-status" class="wpsbm-status-message"></div>');
+					$('.wpsbm-dynamic-content').prepend($container);
+				}
+			}
+			
+			// Ensure container has the status message class
+			if (!$container.hasClass('wpsbm-status-message')) {
+				$container.addClass('wpsbm-status-message');
+			}
 			
 			$container
 				.removeClass('wpsbm-status-success wpsbm-status-error wpsbm-status-warning wpsbm-status-info')
 				.addClass('wpsbm-status-' + type)
-				.text(message)
+				.html(message)
 				.fadeIn();
 			
 			// Auto-hide after 5 seconds for success/info messages
