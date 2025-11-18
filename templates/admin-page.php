@@ -35,7 +35,7 @@ $show_notice = isset( $_GET['wpsbm_updated'] ) && '1' === $_GET['wpsbm_updated']
 				<?php esc_html_e( 'Select the role of this WordPress site in the migration process.', 'wp-site-bridge-migration' ); ?>
 			</p>
 			
-			<form method="post" action="" class="wpsbm-role-form">
+			<form method="post" action="<?php echo esc_url( admin_url( 'tools.php?page=wp-site-bridge-migration' ) ); ?>" class="wpsbm-role-form">
 				<?php wp_nonce_field( 'wpsbm_save_site_role', 'wpsbm_site_role_nonce' ); ?>
 				
 				<div class="wpsbm-radio-group">

@@ -136,10 +136,8 @@ class Admin {
 		
 		// Handle form submission to save site role
 		if ( isset( $_POST['wpsbm_save_site_role'] ) ) {
-			// Verify nonce
-			if ( ! check_admin_referer( 'wpsbm_save_site_role', 'wpsbm_site_role_nonce' ) ) {
-				wp_die( esc_html__( 'Security check failed. Please try again.', 'wp-site-bridge-migration' ) );
-			}
+			// Verify nonce - must be called before any output
+			check_admin_referer( 'wpsbm_save_site_role', 'wpsbm_site_role_nonce' );
 			
 			// Check user capabilities
 			if ( ! current_user_can( 'manage_options' ) ) {
@@ -149,7 +147,7 @@ class Admin {
 			$new_role = isset( $_POST['wpsbm_site_role'] ) ? sanitize_text_field( $_POST['wpsbm_site_role'] ) : 'source';
 			if ( in_array( $new_role, array( 'source', 'destination' ), true ) ) {
 				$this->site_role = $new_role;
-				update_option( 'wpsbm_site_role', $this->site_role );
+				$updated = update_option( 'wpsbm_site_role', $this->site_role );
 				
 				// If set as source, ensure source token exists
 				if ( 'source' === $this->site_role ) {
@@ -166,14 +164,16 @@ class Admin {
 					delete_option( 'wpsbm_secret_key' );
 				}
 				
-				// Redirect to show success message
-				wp_safe_redirect(
-					add_query_arg(
-						array( 'wpsbm_updated' => '1' ),
-						admin_url( 'tools.php?page=wp-site-bridge-migration' )
-					)
+				// Redirect to show success message - use absolute URL
+				$redirect_url = add_query_arg(
+					array( 'wpsbm_updated' => '1' ),
+					admin_url( 'tools.php?page=wp-site-bridge-migration' )
 				);
+				wp_safe_redirect( $redirect_url );
 				exit;
+			} else {
+				// Invalid role value
+				wp_die( esc_html__( 'Invalid site role selected.', 'wp-site-bridge-migration' ) );
 			}
 		}
 		
