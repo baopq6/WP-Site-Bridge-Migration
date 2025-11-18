@@ -178,7 +178,7 @@
 						} else if (response.data) {
 							errorMsg = JSON.stringify(response.data);
 						}
-						WPSBMAdmin.showStatusMessage(errorMsg, 'error');
+						WPSBMAdmin.showStatusMessage(errorMsg, 'error', $('#wpsbm-destination-status'));
 						console.error('Generate key error:', response);
 					}
 				},
