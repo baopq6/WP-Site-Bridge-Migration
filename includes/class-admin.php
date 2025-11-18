@@ -57,6 +57,9 @@ class Admin {
 		add_action( 'admin_menu', array( $this, 'add_admin_menu' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 		
+		// Handle form submission early, before any output
+		add_action( 'admin_init', array( $this, 'handle_form_submission' ) );
+		
 		// AJAX handlers
 		add_action( 'wp_ajax_wpsbm_generate_key', array( $this, 'ajax_generate_key' ) );
 		add_action( 'wp_ajax_wpsbm_connect_validate', array( $this, 'ajax_connect_validate' ) );
@@ -128,11 +131,14 @@ class Admin {
 	}
 	
 	/**
-	 * Render admin page
+	 * Handle form submission early (before any output)
+	 * This prevents "headers already sent" errors
 	 */
-	public function render_admin_page() {
-		// Get saved site role from options, default to 'source'
-		$this->site_role = get_option( 'wpsbm_site_role', 'source' );
+	public function handle_form_submission() {
+		// Only process on our admin page
+		if ( ! isset( $_GET['page'] ) || 'wp-site-bridge-migration' !== $_GET['page'] ) {
+			return;
+		}
 		
 		// Handle form submission to save site role
 		if ( isset( $_POST['wpsbm_save_site_role'] ) ) {
@@ -146,21 +152,17 @@ class Admin {
 			
 			$new_role = isset( $_POST['wpsbm_site_role'] ) ? sanitize_text_field( $_POST['wpsbm_site_role'] ) : 'source';
 			if ( in_array( $new_role, array( 'source', 'destination' ), true ) ) {
-				$this->site_role = $new_role;
-				$updated = update_option( 'wpsbm_site_role', $this->site_role );
+				update_option( 'wpsbm_site_role', $new_role );
 				
 				// If set as source, ensure source token exists
-				if ( 'source' === $this->site_role ) {
+				if ( 'source' === $new_role ) {
 					$source_token = get_option( 'wpsbm_secret_token' );
 					if ( empty( $source_token ) ) {
 						$migrator = Migrator::get_instance();
 						$source_token = $migrator->generate_secure_token( 32 );
 						update_option( 'wpsbm_secret_token', $source_token );
 					}
-				}
-				
-				// Clear any existing destination migration key when switching roles
-				if ( 'source' === $this->site_role ) {
+					// Clear any existing destination migration key when switching to source
 					delete_option( 'wpsbm_secret_key' );
 				}
 				
@@ -176,6 +178,14 @@ class Admin {
 				wp_die( esc_html__( 'Invalid site role selected.', 'wp-site-bridge-migration' ) );
 			}
 		}
+	}
+	
+	/**
+	 * Render admin page
+	 */
+	public function render_admin_page() {
+		// Get saved site role from options, default to 'source'
+		$this->site_role = get_option( 'wpsbm_site_role', 'source' );
 		
 		// Check if we should show success notice
 		$show_notice = isset( $_GET['wpsbm_updated'] ) && '1' === $_GET['wpsbm_updated'];
