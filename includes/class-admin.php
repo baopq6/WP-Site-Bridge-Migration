@@ -135,7 +135,17 @@ class Admin {
 		$this->site_role = get_option( 'wpsbm_site_role', 'source' );
 		
 		// Handle form submission to save site role
-		if ( isset( $_POST['wpsbm_save_site_role'] ) && check_admin_referer( 'wpsbm_save_site_role', 'wpsbm_site_role_nonce' ) ) {
+		if ( isset( $_POST['wpsbm_save_site_role'] ) ) {
+			// Verify nonce
+			if ( ! check_admin_referer( 'wpsbm_save_site_role', 'wpsbm_site_role_nonce' ) ) {
+				wp_die( esc_html__( 'Security check failed. Please try again.', 'wp-site-bridge-migration' ) );
+			}
+			
+			// Check user capabilities
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_die( esc_html__( 'Insufficient permissions.', 'wp-site-bridge-migration' ) );
+			}
+			
 			$new_role = isset( $_POST['wpsbm_site_role'] ) ? sanitize_text_field( $_POST['wpsbm_site_role'] ) : 'source';
 			if ( in_array( $new_role, array( 'source', 'destination' ), true ) ) {
 				$this->site_role = $new_role;
@@ -149,6 +159,11 @@ class Admin {
 						$source_token = $migrator->generate_secure_token( 32 );
 						update_option( 'wpsbm_secret_token', $source_token );
 					}
+				}
+				
+				// Clear any existing destination migration key when switching roles
+				if ( 'source' === $this->site_role ) {
+					delete_option( 'wpsbm_secret_key' );
 				}
 				
 				// Redirect to show success message

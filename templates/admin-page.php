@@ -14,7 +14,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @var string $site_role Current site role (source or destination)
  * @var bool   $show_notice Whether to show success notice
  */
-$show_notice = isset( $show_notice ) ? $show_notice : false;
+// Check if we should show success notice (from redirect after save)
+$show_notice = isset( $_GET['wpsbm_updated'] ) && '1' === $_GET['wpsbm_updated'];
 ?>
 <div class="wrap wpsbm-wrap">
 	<h1 class="wp-heading-inline"><?php echo esc_html( get_admin_page_title() ); ?></h1>

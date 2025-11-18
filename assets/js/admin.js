@@ -162,7 +162,7 @@
 				success: function(response) {
 					$button.prop('disabled', false).removeClass('wpsbm-loading');
 					
-					if (response.success && response.data.migration_key) {
+					if (response.success && response.data && response.data.migration_key) {
 						$textarea.val(response.data.migration_key);
 						$copyButton.show();
 						
@@ -171,10 +171,15 @@
 							'success'
 						);
 					} else {
-						WPSBMAdmin.showStatusMessage(
-							response.data && response.data.message ? response.data.message : 'Failed to generate migration key.',
-							'error'
-						);
+						// Show detailed error message
+						let errorMsg = 'Failed to generate migration key.';
+						if (response.data && response.data.message) {
+							errorMsg = response.data.message;
+						} else if (response.data) {
+							errorMsg = JSON.stringify(response.data);
+						}
+						WPSBMAdmin.showStatusMessage(errorMsg, 'error');
+						console.error('Generate key error:', response);
 					}
 				},
 				error: function(xhr, status, error) {
