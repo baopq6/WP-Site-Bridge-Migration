@@ -295,10 +295,28 @@ class Admin {
 		$target_url = ! empty( $destination_url ) ? $destination_url : $key_data['url'];
 		$target_url = trailingslashit( $target_url );
 		
+		// Check if URL is localhost or local IP
+		$is_localhost = false;
+		$parsed_url = parse_url( $target_url );
+		if ( isset( $parsed_url['host'] ) ) {
+			$host = strtolower( $parsed_url['host'] );
+			$is_localhost = (
+				'localhost' === $host ||
+				'127.0.0.1' === $host ||
+				'::1' === $host ||
+				'0.0.0.0' === $host ||
+				strpos( $host, '.local' ) !== false ||
+				preg_match( '/^192\.168\./', $host ) ||
+				preg_match( '/^10\./', $host ) ||
+				preg_match( '/^172\.(1[6-9]|2[0-9]|3[0-1])\./', $host )
+			);
+		}
+		
 		// Prepare REST API endpoint
 		$rest_url = $target_url . 'wp-json/wpsbm/v1/handshake';
 		
 		// Make handshake request
+		// Disable SSL verification for localhost, but keep it for production
 		$response = wp_remote_post(
 			$rest_url,
 			array(
@@ -306,18 +324,39 @@ class Admin {
 				'body'    => array(
 					'token' => $key_data['token'],
 				),
-				'sslverify' => true,
+				'sslverify' => ! $is_localhost, // Disable SSL verification for localhost
 			)
 		);
 		
 		// Check for errors
 		if ( is_wp_error( $response ) ) {
+			$error_code = $response->get_error_code();
+			$error_message = $response->get_error_message();
+			
+			// Provide helpful error messages
+			$user_friendly_message = $error_message;
+			
+			if ( 'http_request_failed' === $error_code ) {
+				if ( strpos( $error_message, 'Could not connect' ) !== false || strpos( $error_message, 'Failed to connect' ) !== false ) {
+					$user_friendly_message = sprintf(
+						/* translators: %1$s: Error message, %2$s: Target URL */
+						__( 'Cannot connect to destination site at %2$s. Error: %1$s. Please ensure: 1) The destination site is running, 2) The URL is correct, 3) The plugin is activated on the destination site, 4) There are no firewall restrictions.', 'wp-site-bridge-migration' ),
+						$error_message,
+						esc_html( $target_url )
+					);
+				} elseif ( strpos( $error_message, 'SSL' ) !== false || strpos( $error_message, 'certificate' ) !== false ) {
+					$user_friendly_message = sprintf(
+						/* translators: %s: Error message */
+						__( 'SSL certificate error: %s. If this is a local development site, this is normal. Please ensure the destination site is accessible.', 'wp-site-bridge-migration' ),
+						$error_message
+					);
+				}
+			}
+			
 			wp_send_json_error( array(
-				'message' => sprintf(
-					/* translators: %s: Error message */
-					__( 'Connection failed: %s', 'wp-site-bridge-migration' ),
-					$response->get_error_message()
-				),
+				'message' => $user_friendly_message,
+				'error_code' => $error_code,
+				'error_details' => $error_message,
 			) );
 		}
 		
