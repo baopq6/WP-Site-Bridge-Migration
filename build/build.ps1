@@ -106,6 +106,7 @@ try {
         "SECURITY_AUDIT.md",
         "CODE_AUDIT_REPORT.md",
         "INSTALLATION_TROUBLESHOOTING.md",
+        "INSTALLATION_FIX.md",
         "build.sh",
         "build.ps1",
         "build.bat",
