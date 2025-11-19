@@ -176,7 +176,11 @@ $show_notice = isset( $_GET['wpsbm_updated'] ) && '1' === $_GET['wpsbm_updated']
 							<?php esc_html_e( 'Optional: Override the destination URL. If not provided, the URL from the migration key will be used.', 'wp-site-bridge-migration' ); ?>
 							<br>
 							<strong><?php esc_html_e( 'Docker Users:', 'wp-site-bridge-migration' ); ?></strong>
-							<?php esc_html_e( 'If both sites are in Docker containers on the same network, use the container name (e.g., http://wp-wordpress-blank - recommended). Alternatively, use http://host.docker.internal:8094/ (Windows/Mac) or http://172.17.0.1:8094/ (Linux).', 'wp-site-bridge-migration' ); ?>
+							<?php esc_html_e( 'If both sites are in Docker containers on the same network, use the container name (e.g., http://wp-wordpress-blank - recommended, works from inside containers). Alternatively, use http://host.docker.internal:8094/ (Windows/Mac) or http://172.17.0.1:8094/ (Linux).', 'wp-site-bridge-migration' ); ?>
+							<br>
+							<small style="color: #666;">
+								<?php esc_html_e( 'Note: Container names only work from inside Docker containers, not from your browser on the host machine. To test from browser, use http://localhost:8094/', 'wp-site-bridge-migration' ); ?>
+							</small>
 						</p>
 					</div>
 					
