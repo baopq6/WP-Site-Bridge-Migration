@@ -3,7 +3,7 @@ Contributors: yourname
 Tags: migration, backup, move site, transfer, cloning, site migration, wordpress migration
 Requires at least: 5.6
 Tested up to: 6.4
-Stable tag: 1.1.0
+Stable tag: 1.2.0
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
@@ -103,6 +103,12 @@ The current version focuses on single-site migrations. Multisite support may be 
 4. Success Screen - Migration completed with link to new site
 
 == Changelog ==
+
+= 1.2.0 =
+* Added comprehensive troubleshooting guide in Help & Guide tab
+* Updated plugin author information with GitHub and Facebook links
+* Added donation support section
+* Improved documentation
 
 = 1.1.0 =
 * Performance: Added Streaming SQL Parser for large database imports (handles 100MB+ files with minimal RAM)

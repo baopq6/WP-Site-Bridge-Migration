@@ -1,11 +1,11 @@
 <?php
 /**
  * Plugin Name: WP Site Bridge Migration
- * Plugin URI: https://example.com/wp-site-bridge-migration
+ * Plugin URI: https://github.com/baopq6/WP-Site-Bridge-Migration
  * Description: Migrate WordPress sites from one host to another directly.
- * Version: 1.1.0
- * Author: Your Name
- * Author URI: https://example.com
+ * Version: 1.2.0
+ * Author: @pqbao1987
+ * Author URI: https://www.facebook.com/pqbao1987
  * License: GPL v2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: wp-site-bridge-migration
@@ -25,7 +25,7 @@ if ( file_exists( __DIR__ . '/vendor/autoload.php' ) ) {
 }
 
 // Define plugin constants
-define( 'WPSBM_VERSION', '1.1.0' );
+define( 'WPSBM_VERSION', '1.2.0' );
 define( 'WPSBM_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'WPSBM_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'WPSBM_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );

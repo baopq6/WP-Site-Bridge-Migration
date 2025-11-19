@@ -261,7 +261,14 @@ The migration process consists of 5 phases:
 
 ## 📝 Changelog
 
-### 1.1.0 (Current)
+### 1.2.0 (Current)
+
+* ✅ **Troubleshooting Guide**: Added comprehensive troubleshooting section in Help & Guide tab
+* ✅ **Author Information**: Updated plugin author information with GitHub and Facebook links
+* ✅ **Donation Support**: Added donation section for USDT (BNB Smartchain)
+* ✅ **Improved Documentation**: Enhanced README with common troubleshooting questions
+
+### 1.1.0
 - 🚀 **Streaming SQL Parser**: Memory-efficient database import (handles 100MB+ files with minimal RAM)
 - 🚀 **Batch Search & Replace**: Processes large databases in small batches to avoid timeouts
 - ✅ Real-time progress tracking for search & replace operations

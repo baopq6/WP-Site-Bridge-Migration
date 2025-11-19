@@ -401,13 +401,67 @@ $show_notice = isset( $_GET['wpsbm_updated'] ) && '1' === $_GET['wpsbm_updated']
 				
 				<hr style="border: none; border-top: 1px solid #dcdcde; margin: 32px 0;">
 				
-				<div class="wpsbm-guide-section">
+				<div class="wpsbm-guide-section" style="margin-bottom: 32px;">
 					<h4 style="font-size: 18px; font-weight: 600; margin-bottom: 12px; color: #1d2327; padding-bottom: 8px; border-bottom: 2px solid #dcdcde;">
 						✅ <?php esc_html_e( 'Final Steps', 'wp-site-bridge-migration' ); ?>
 					</h4>
 					<p style="color: #646970; line-height: 1.7; font-size: 14px;">
 						<?php esc_html_e( 'After migration, log in to the Destination site using the', 'wp-site-bridge-migration' ); ?> <strong><?php esc_html_e( 'Admin Username & Password from the SOURCE site', 'wp-site-bridge-migration' ); ?></strong>. 
 						<?php esc_html_e( 'Go to Settings > Permalinks and click "Save Changes" to flush rewrite rules.', 'wp-site-bridge-migration' ); ?>
+					</p>
+				</div>
+				
+				<div class="wpsbm-guide-section" style="margin-bottom: 32px;">
+					<h4 style="font-size: 18px; font-weight: 600; margin-bottom: 12px; color: #1d2327; padding-bottom: 8px; border-bottom: 2px solid #dcdcde;">
+						❓ <?php esc_html_e( 'Troubleshooting', 'wp-site-bridge-migration' ); ?>
+					</h4>
+					
+					<div style="color: #646970; line-height: 1.8; font-size: 14px;">
+						<p style="margin-bottom: 16px;">
+							<strong style="color: #1d2327;">Q: <?php esc_html_e( 'The process stopped or shows a red error?', 'wp-site-bridge-migration' ); ?></strong><br>
+							<?php esc_html_e( 'A:', 'wp-site-bridge-migration' ); ?> <?php esc_html_e( 'Don\'t worry. Simply refresh the page (F5) on Site A and try again. The plugin will automatically clean up temporary files and restart.', 'wp-site-bridge-migration' ); ?>
+						</p>
+						
+						<p style="margin-bottom: 16px;">
+							<strong style="color: #1d2327;">Q: <?php esc_html_e( 'After migration, I get 404 errors when accessing posts?', 'wp-site-bridge-migration' ); ?></strong><br>
+							<?php esc_html_e( 'A:', 'wp-site-bridge-migration' ); ?> <?php esc_html_e( 'Go to Dashboard → Settings → Permalinks → Click "Save Changes". This will reset the permalink structure.', 'wp-site-bridge-migration' ); ?>
+						</p>
+						
+						<p style="margin-bottom: 16px;">
+							<strong style="color: #1d2327;">Q: <?php esc_html_e( 'The new site has broken layout/design?', 'wp-site-bridge-migration' ); ?></strong><br>
+							<?php esc_html_e( 'A:', 'wp-site-bridge-migration' ); ?> <?php esc_html_e( 'The "Search & Replace" process may not have completed. Try running the migration again or contact technical support.', 'wp-site-bridge-migration' ); ?>
+						</p>
+					</div>
+				</div>
+				
+				<hr style="border: none; border-top: 1px solid #dcdcde; margin: 32px 0;">
+				
+				<div class="wpsbm-guide-section" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 24px; border-radius: 8px; color: white; margin-bottom: 32px;">
+					<h4 style="font-size: 18px; font-weight: 600; margin-bottom: 12px; color: white; padding-bottom: 8px; border-bottom: 2px solid rgba(255,255,255,0.3);">
+						💝 <?php esc_html_e( 'Support & Donate', 'wp-site-bridge-migration' ); ?>
+					</h4>
+					<p style="color: rgba(255,255,255,0.95); line-height: 1.8; font-size: 14px; margin-bottom: 16px;">
+						<?php esc_html_e( 'This plugin is developed with ❤️ for the WordPress community. If you find it useful, please consider supporting the development:', 'wp-site-bridge-migration' ); ?>
+					</p>
+					<div style="background: rgba(255,255,255,0.15); padding: 16px; border-radius: 6px; margin-bottom: 16px;">
+						<p style="margin: 0 0 8px 0; font-weight: 600; color: white;">
+							<?php esc_html_e( 'USDT Donation (BNB Smartchain):', 'wp-site-bridge-migration' ); ?>
+						</p>
+						<code style="background: rgba(0,0,0,0.2); padding: 8px 12px; border-radius: 4px; display: block; word-break: break-all; color: #fff; font-size: 13px;">
+							0xeC6CfB0eE72d8104F6c17eB0163b84c3b6E9ad33
+						</code>
+					</div>
+					<p style="color: rgba(255,255,255,0.9); line-height: 1.7; font-size: 13px; margin: 0;">
+						<?php esc_html_e( 'Your support helps improve the plugin and add new features. You can also request features or provide feedback when donating!', 'wp-site-bridge-migration' ); ?>
+					</p>
+				</div>
+				
+				<div class="wpsbm-guide-section" style="text-align: center; padding: 20px; background: #f6f7f7; border-radius: 8px; margin-bottom: 0;">
+					<p style="margin: 0; color: #646970; font-size: 14px;">
+						<?php esc_html_e( 'Plugin by', 'wp-site-bridge-migration' ); ?> 
+						<a href="https://www.facebook.com/pqbao1987" target="_blank" style="color: #2271b1; text-decoration: none; font-weight: 600;">@pqbao1987</a> 
+						| 
+						<a href="https://github.com/baopq6/WP-Site-Bridge-Migration" target="_blank" style="color: #2271b1; text-decoration: none; font-weight: 600;"><?php esc_html_e( 'Visit Plugin GitHub', 'wp-site-bridge-migration' ); ?></a>
 					</p>
 				</div>
 			</div>
