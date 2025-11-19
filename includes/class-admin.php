@@ -450,22 +450,39 @@ class Admin {
 				$test_base_url = $target_url;
 				$test_wp_json = $target_url . 'wp-json/';
 				
+				// Build detailed troubleshooting steps
+				$troubleshooting_steps = array();
+				$troubleshooting_steps[] = __( 'The plugin is <strong>activated</strong> on the destination site', 'wp-site-bridge-migration' );
+				$troubleshooting_steps[] = sprintf(
+					/* translators: %s: Permalinks URL */
+					__( '<strong>Enable Permalinks:</strong> Go to <a href="%s" target="_blank">Settings > Permalinks</a> on the destination site, select any option (NOT "Plain"), and click "Save Changes". This activates REST API.', 'wp-site-bridge-migration' ),
+					esc_url( $target_url . 'wp-admin/options-permalink.php' )
+				);
+				$troubleshooting_steps[] = __( '<strong>Check .htaccess file:</strong> Ensure the .htaccess file exists in the WordPress root directory and contains rewrite rules', 'wp-site-bridge-migration' );
+				$troubleshooting_steps[] = __( '<strong>Check Apache mod_rewrite:</strong> Ensure mod_rewrite is enabled on the Apache server', 'wp-site-bridge-migration' );
+				$troubleshooting_steps[] = sprintf(
+					/* translators: %s: wp-json URL */
+					__( 'Test REST API: <a href="%s" target="_blank">%s</a> should return JSON, not "Not Found"', 'wp-site-bridge-migration' ),
+					esc_url( 'http://localhost:8094/wp-json/' ),
+					esc_html( 'http://localhost:8094/wp-json/' )
+				);
+				
+				$troubleshooting_text = '<ol><li>' . implode( '</li><li>', $troubleshooting_steps ) . '</li></ol>';
+				
 				// Build Docker-specific guidance
 				$docker_guidance = '';
 				if ( $is_docker ) {
 					$docker_guidance = '<br><br><strong>Docker Users:</strong><br>';
 					$docker_guidance .= __( '• Container names (like "wp-wordpress-blank") only work FROM INSIDE Docker containers, not from your browser on the host machine.', 'wp-site-bridge-migration' );
-					$docker_guidance .= '<br>• To test from your browser, use: <a href="http://localhost:8094/wp-json/" target="_blank">http://localhost:8094/wp-json/</a>';
 					$docker_guidance .= '<br>• The plugin will automatically use the correct URL when connecting from inside the container.';
 					$docker_guidance .= '<br>• If connection fails, try using container name in the "Destination Website URL" field: <code>http://wp-wordpress-blank</code>';
 				}
 				
 				$error_message = sprintf(
-					/* translators: %1$s: REST API URL, %2$s: Base URL, %3$s: wp-json URL, %4$s: Docker guidance */
-					__( 'REST API endpoint not found (404). Please verify:<br>1) The plugin is <strong>activated</strong> on the destination site<br>2) <strong>Permalinks are enabled</strong> (Settings > Permalinks → Save Changes)<br>3) Test these URLs from your browser (on host machine):<br>&nbsp;&nbsp;&nbsp;• Base site: <a href="http://localhost:8094/" target="_blank">http://localhost:8094/</a><br>&nbsp;&nbsp;&nbsp;• wp-json: <a href="http://localhost:8094/wp-json/" target="_blank">http://localhost:8094/wp-json/</a><br>%4$s', 'wp-site-bridge-migration' ),
+					/* translators: %1$s: REST API URL, %2$s: Troubleshooting steps, %3$s: Docker guidance */
+					__( 'REST API endpoint not found (404). The URL <code>%1$s</code> returned "Not Found".<br><br><strong>Troubleshooting Steps:</strong><br>%2$s%3$s', 'wp-site-bridge-migration' ),
 					esc_html( $rest_url ),
-					esc_html( $test_base_url ),
-					esc_html( $test_wp_json ),
+					$troubleshooting_text,
 					$docker_guidance
 				);
 			} elseif ( 500 === $response_code ) {
