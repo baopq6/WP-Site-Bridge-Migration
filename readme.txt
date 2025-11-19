@@ -1,5 +1,5 @@
 === WP Site Bridge Migration ===
-Contributors: yourname
+Contributors: pqbao1987
 Tags: migration, backup, move site, transfer, cloning, site migration, wordpress migration
 Requires at least: 5.6
 Tested up to: 6.4
