@@ -128,7 +128,7 @@ $show_notice = isset( $_GET['wpsbm_updated'] ) && '1' === $_GET['wpsbm_updated']
 				<div id="wpsbm-destination-status" class="wpsbm-status-message" style="display: none; margin-top: 15px;"></div>
 				
 				<!-- Migration Status Section (Destination Site) -->
-				<div id="wpsbm-destination-migration-status" class="wpsbm-migration-status-section" style="margin-top: 30px; display: none;">
+				<div id="wpsbm-destination-migration-status" class="wpsbm-migration-status-section" style="margin-top: 30px;">
 					<h2 class="wpsbm-card-title"><?php esc_html_e( 'Migration Status', 'wp-site-bridge-migration' ); ?></h2>
 					<p class="wpsbm-description">
 						<?php esc_html_e( 'Monitor the migration progress in real-time. This section will automatically update as data is being restored.', 'wp-site-bridge-migration' ); ?>

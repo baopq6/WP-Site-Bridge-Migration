@@ -18,12 +18,9 @@
 		migrationStatusInterval: null,
 		
 		/**
-		 * Initialize
+		 * Migration status check counter (for auto-stop)
 		 */
-		/**
-		 * Migration status refresh interval
-		 */
-		migrationStatusInterval: null,
+		migrationStatusCheckCount: 0,
 		
 		init: function() {
 			this.bindEvents();
@@ -1052,6 +1049,194 @@
 			$('html, body').animate({
 				scrollTop: $migrationSection.offset().top - 100
 			}, 500);
+		},
+		
+		/**
+		 * Initialize destination status monitoring
+		 */
+		initDestinationStatusMonitoring: function() {
+			// Only monitor if we're on destination site tab
+			const $destinationTab = $('#wpsbm-destination-ui');
+			if ($destinationTab.length === 0 || !$destinationTab.hasClass('wpsbm-tab-content-active')) {
+				return;
+			}
+			
+			// Check if migration status section exists
+			const $statusSection = $('#wpsbm-destination-migration-status');
+			if ($statusSection.length === 0) {
+				return;
+			}
+			
+			// Show the section
+			$statusSection.fadeIn();
+			
+			// Start monitoring migration status
+			this.startDestinationStatusMonitoring();
+		},
+		
+		/**
+		 * Start monitoring destination migration status
+		 */
+		startDestinationStatusMonitoring: function() {
+			// Clear any existing interval
+			if (this.migrationStatusInterval) {
+				clearInterval(this.migrationStatusInterval);
+			}
+			
+			// Check status every 5 seconds (optimized for performance)
+			this.migrationStatusInterval = setInterval(function() {
+				WPSBMAdmin.checkDestinationMigrationStatus();
+			}, 5000);
+			
+			// Check immediately
+			this.checkDestinationMigrationStatus();
+		},
+		
+		/**
+		 * Stop monitoring destination migration status
+		 */
+		stopDestinationStatusMonitoring: function() {
+			if (this.migrationStatusInterval) {
+				clearInterval(this.migrationStatusInterval);
+				this.migrationStatusInterval = null;
+			}
+			// Reset check counter
+			if (this.migrationStatusCheckCount) {
+				this.migrationStatusCheckCount = 0;
+			}
+		},
+		
+		/**
+		 * Check destination migration status
+		 */
+		checkDestinationMigrationStatus: function() {
+			// Only check if we're on destination tab
+			const $destinationTab = $('#wpsbm-destination-ui');
+			if ($destinationTab.length === 0 || !$destinationTab.hasClass('wpsbm-tab-content-active')) {
+				// Stop monitoring if not on destination tab
+				WPSBMAdmin.stopDestinationStatusMonitoring();
+				return;
+			}
+			
+			// Get migration status from REST API
+			const restUrl = window.location.origin + '/wp-json/';
+			
+			$.ajax({
+				url: restUrl + 'wpsbm/v1/migration_status',
+				type: 'GET',
+				cache: false,
+				timeout: 5000,
+				success: function(response) {
+					if (response && response.status) {
+						WPSBMAdmin.updateDestinationStatusDisplay(response);
+						
+						// Auto-stop monitoring if migration is completed
+						if (response.status === 'completed') {
+							// Stop after showing completion for 30 seconds
+							setTimeout(function() {
+								WPSBMAdmin.stopDestinationStatusMonitoring();
+							}, 30000);
+						} else if (response.status === 'idle' && response.last_update) {
+							// If idle and last update was more than 1 minute ago, stop monitoring
+							const lastUpdate = response.last_update * 1000;
+							const now = Date.now();
+							if (now - lastUpdate > 60000) {
+								WPSBMAdmin.stopDestinationStatusMonitoring();
+							}
+						}
+					}
+				},
+				error: function() {
+					// Silently fail - migration might not have started yet
+				}
+			});
+		},
+		
+		/**
+		 * Update destination status display
+		 */
+		updateDestinationStatusDisplay: function(status) {
+			const $statusSection = $('#wpsbm-destination-migration-status');
+			const $statusMessage = $('#wpsbm-destination-status-message');
+			
+			// Show section if migration is active
+			if (status.status === 'processing' || status.status === 'completed' || status.status === 'error') {
+				$statusSection.fadeIn();
+			}
+			
+			// Map step names to progress items
+			const stepMap = {
+				'database': 'destination-database',
+				'plugins': 'destination-plugins',
+				'themes': 'destination-themes',
+				'uploads': 'destination-uploads',
+			};
+			
+			// Update progress items
+			$.each(stepMap, function(step, itemKey) {
+				const $item = $('.wpsbm-progress-item[data-step="' + itemKey + '"]');
+				
+				if (status.completed_steps && status.completed_steps.indexOf(step) !== -1) {
+					// Step completed
+					$item.removeClass('wpsbm-progress-active wpsbm-progress-error').addClass('wpsbm-progress-done');
+					$item.find('.wpsbm-progress-icon').text('✓');
+					
+					if (step === 'database') {
+						$item.find('.wpsbm-progress-text').text('Database restored successfully');
+					} else if (step === 'plugins') {
+						$item.find('.wpsbm-progress-text').text('Plugins restored successfully');
+					} else if (step === 'themes') {
+						$item.find('.wpsbm-progress-text').text('Themes restored successfully');
+					} else if (step === 'uploads') {
+						$item.find('.wpsbm-progress-text').text('Uploads restored successfully');
+					}
+				} else if (status.current_step === step && status.status === 'processing') {
+					// Step in progress
+					$item.removeClass('wpsbm-progress-done wpsbm-progress-error').addClass('wpsbm-progress-active');
+					$item.find('.wpsbm-progress-icon').text('⟳');
+					
+					if (step === 'database') {
+						$item.find('.wpsbm-progress-text').text('Restoring database...');
+					} else if (step === 'plugins') {
+						$item.find('.wpsbm-progress-text').text('Restoring plugins...');
+					} else if (step === 'themes') {
+						$item.find('.wpsbm-progress-text').text('Restoring themes...');
+					} else if (step === 'uploads') {
+						$item.find('.wpsbm-progress-text').text('Restoring uploads...');
+					}
+				} else if (status.status === 'error' && status.current_step === step) {
+					// Step failed
+					$item.removeClass('wpsbm-progress-active wpsbm-progress-done').addClass('wpsbm-progress-error');
+					$item.find('.wpsbm-progress-icon').text('✗');
+					
+					if (status.error) {
+						$item.find('.wpsbm-progress-text').text('Error: ' + status.error);
+					}
+				}
+			});
+			
+			// Update status message
+			if (status.status === 'processing') {
+				WPSBMAdmin.showStatusMessage(
+					'Migration in progress... Current step: ' + (status.current_step || 'Unknown'),
+					'info',
+					$statusMessage
+				);
+			} else if (status.status === 'completed') {
+				WPSBMAdmin.showStatusMessage(
+					'Migration completed successfully!',
+					'success',
+					$statusMessage
+				);
+				// Stop monitoring
+				WPSBMAdmin.stopDestinationStatusMonitoring();
+			} else if (status.status === 'error') {
+				WPSBMAdmin.showStatusMessage(
+					'Migration error: ' + (status.error || 'Unknown error'),
+					'error',
+					$statusMessage
+				);
+			}
 		},
 		
 		/**
