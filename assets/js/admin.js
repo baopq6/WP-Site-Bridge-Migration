@@ -13,6 +13,11 @@
 	const WPSBMAdmin = {
 		
 		/**
+		 * Migration status refresh interval
+		 */
+		migrationStatusInterval: null,
+		
+		/**
 		 * Initialize
 		 */
 		init: function() {

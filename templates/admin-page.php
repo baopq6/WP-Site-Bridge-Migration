@@ -126,6 +126,45 @@ $show_notice = isset( $_GET['wpsbm_updated'] ) && '1' === $_GET['wpsbm_updated']
 				
 				<!-- Status message container for destination -->
 				<div id="wpsbm-destination-status" class="wpsbm-status-message" style="display: none; margin-top: 15px;"></div>
+				
+				<!-- Migration Status Section (Destination Site) -->
+				<div id="wpsbm-destination-migration-status" class="wpsbm-migration-status-section" style="margin-top: 30px; display: none;">
+					<h2 class="wpsbm-card-title"><?php esc_html_e( 'Migration Status', 'wp-site-bridge-migration' ); ?></h2>
+					<p class="wpsbm-description">
+						<?php esc_html_e( 'Monitor the migration progress in real-time. This section will automatically update as data is being restored.', 'wp-site-bridge-migration' ); ?>
+					</p>
+					
+					<div id="wpsbm-destination-progress" class="wpsbm-progress-list" style="margin-top: 20px;">
+						<div class="wpsbm-progress-item" data-step="destination-database">
+							<span class="wpsbm-progress-icon">○</span>
+							<span class="wpsbm-progress-text"><?php esc_html_e( 'Waiting for database restoration...', 'wp-site-bridge-migration' ); ?></span>
+						</div>
+						<div class="wpsbm-progress-item" data-step="destination-plugins">
+							<span class="wpsbm-progress-icon">○</span>
+							<span class="wpsbm-progress-text"><?php esc_html_e( 'Waiting for plugins restoration...', 'wp-site-bridge-migration' ); ?></span>
+						</div>
+						<div class="wpsbm-progress-item" data-step="destination-themes">
+							<span class="wpsbm-progress-icon">○</span>
+							<span class="wpsbm-progress-text"><?php esc_html_e( 'Waiting for themes restoration...', 'wp-site-bridge-migration' ); ?></span>
+						</div>
+						<div class="wpsbm-progress-item" data-step="destination-uploads">
+							<span class="wpsbm-progress-icon">○</span>
+							<span class="wpsbm-progress-text"><?php esc_html_e( 'Waiting for uploads restoration...', 'wp-site-bridge-migration' ); ?></span>
+						</div>
+						<div class="wpsbm-progress-item" data-step="destination-finalize">
+							<span class="wpsbm-progress-icon">○</span>
+							<span class="wpsbm-progress-text"><?php esc_html_e( 'Waiting for search & replace...', 'wp-site-bridge-migration' ); ?></span>
+						</div>
+					</div>
+					
+					<div id="wpsbm-destination-status-message" class="wpsbm-status-message" style="display: none; margin-top: 15px;"></div>
+					
+					<div class="wpsbm-button-group" style="margin-top: 15px;">
+						<button type="button" id="wpsbm-refresh-status" class="wpsbm-button wpsbm-button-secondary">
+							<?php esc_html_e( 'Refresh Status', 'wp-site-bridge-migration' ); ?>
+						</button>
+					</div>
+				</div>
 			</div>
 			
 			<!-- Source Website UI -->

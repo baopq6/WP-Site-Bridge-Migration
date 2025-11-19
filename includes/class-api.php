@@ -234,6 +234,16 @@ class API {
 				),
 			)
 		);
+		
+		register_rest_route(
+			'wpsbm/v1',
+			'/migration_status',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( $this, 'handle_migration_status' ),
+				'permission_callback' => '__return_true', // Public endpoint for status check
+			)
+		);
 	}
 	
 	/**
@@ -464,6 +474,14 @@ class API {
 		$source_url = $request->get_param( 'source_url' );
 		$source_token = $request->get_param( 'source_token' ); // Token to download from source
 		
+		// Update migration status
+		$status = get_option( 'wpsbm_migration_status', array() );
+		$status['current_step'] = $step;
+		$status['status'] = 'processing';
+		$status['last_update'] = time();
+		$status['source_url'] = $source_url;
+		update_option( 'wpsbm_migration_status', $status );
+		
 		// Increase time limit and memory limit
 		@set_time_limit( 600 ); // 10 minutes
 		@ini_set( 'memory_limit', '512M' );
@@ -494,16 +512,27 @@ class API {
 		}
 		
 		if ( false === $result ) {
+			// Update status to error
+			$status['status'] = 'error';
+			$status['error'] = sprintf(
+				/* translators: %s: Step name */
+				__( 'Failed to process %s step.', 'wp-site-bridge-migration' ),
+				$step
+			);
+			update_option( 'wpsbm_migration_status', $status );
+			
 			return new \WP_Error(
 				'process_failed',
-				sprintf(
-					/* translators: %s: Step name */
-					__( 'Failed to process %s step.', 'wp-site-bridge-migration' ),
-					$step
-				),
+				$status['error'],
 				array( 'status' => 500 )
 			);
 		}
+		
+		// Update status to completed for this step
+		$status['completed_steps'][] = $step;
+		$status['status'] = 'completed';
+		$status['last_update'] = time();
+		update_option( 'wpsbm_migration_status', $status );
 		
 		// Success response
 		return new \WP_REST_Response(
@@ -518,6 +547,31 @@ class API {
 			),
 			200
 		);
+	}
+	
+	/**
+	 * Handle migration status request
+	 *
+	 * Returns current migration status for destination site monitoring
+	 *
+	 * @param WP_REST_Request $request Request object
+	 * @return WP_REST_Response Response object
+	 */
+	public function handle_migration_status( $request ) {
+		$status = get_option( 'wpsbm_migration_status', array() );
+		
+		// Default status if not set
+		if ( empty( $status ) ) {
+			$status = array(
+				'status' => 'idle',
+				'current_step' => null,
+				'completed_steps' => array(),
+				'last_update' => null,
+				'source_url' => null,
+			);
+		}
+		
+		return new \WP_REST_Response( $status, 200 );
 	}
 	
 	/**
