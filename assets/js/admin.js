@@ -20,11 +20,17 @@
 		/**
 		 * Initialize
 		 */
+		/**
+		 * Migration status refresh interval
+		 */
+		migrationStatusInterval: null,
+		
 		init: function() {
 			this.bindEvents();
 			this.initRoleSwitcher();
 			this.initTabs();
 			this.checkConnectionStatus();
+			this.initDestinationStatusMonitoring();
 		},
 		
 		/**
@@ -53,6 +59,16 @@
 				e.preventDefault();
 				const tab = $(this).data('tab');
 				WPSBMAdmin.showTab(tab);
+				
+				// Start monitoring when destination tab is shown
+				if (tab === 'destination') {
+					setTimeout(function() {
+						WPSBMAdmin.initDestinationStatusMonitoring();
+					}, 100);
+				} else {
+					// Stop monitoring when leaving destination tab
+					WPSBMAdmin.stopDestinationStatusMonitoring();
+				}
 			});
 		},
 		
@@ -121,6 +137,11 @@
 			
 			// Handle start migration button
 			$(document).on('click', '#wpsbm-start-migration', this.handleStartMigration);
+			
+			// Handle refresh status button
+			$(document).on('click', '#wpsbm-refresh-status', function() {
+				WPSBMAdmin.checkDestinationMigrationStatus();
+			});
 		},
 		
 		/**
