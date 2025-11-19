@@ -300,7 +300,23 @@ GPL v2 or later
 
 ## 👨‍💻 Author
 
+**@pqbao1987**
+
+* [Facebook](https://www.facebook.com/pqbao1987)
+* [GitHub](https://github.com/baopq6/WP-Site-Bridge-Migration)
+
 Developed following WordPress best practices and coding standards.
+
+### 💝 Support & Donate
+
+This plugin is developed with ❤️ for the WordPress community. If you find it useful, please consider supporting the development:
+
+**USDT Donation (BNB Smartchain):**
+```
+0xeC6CfB0eE72d8104F6c17eB0163b84c3b6E9ad33
+```
+
+Your support helps improve the plugin and add new features. You can also request features or provide feedback when donating!
 
 ## ⚠️ Important Notes
 
