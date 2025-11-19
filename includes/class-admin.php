@@ -388,6 +388,7 @@ class Admin {
 							esc_html( $target_url )
 						);
 						$troubleshooting[] = __( 'Manually enter the correct URL in the "Destination Website URL (Optional)" field:', 'wp-site-bridge-migration' );
+						$troubleshooting[] = __( '<strong>Best option:</strong> Use container name (e.g., "http://wp-wordpress-blank" - no port needed if using default port 80)', 'wp-site-bridge-migration' );
 						$troubleshooting[] = __( 'On Windows/Mac: Use "http://host.docker.internal:8094/"', 'wp-site-bridge-migration' );
 						$troubleshooting[] = __( 'On Linux: Use "http://172.17.0.1:8094/" or your Docker gateway IP', 'wp-site-bridge-migration' );
 						$troubleshooting[] = __( 'Or use your host machine\'s actual IP address', 'wp-site-bridge-migration' );
@@ -445,10 +446,16 @@ class Admin {
 			} elseif ( 403 === $response_code ) {
 				$error_message = __( 'Invalid token. Please check your migration key and ensure it matches the destination site.', 'wp-site-bridge-migration' );
 			} elseif ( 404 === $response_code ) {
+				// 404 could mean: plugin not activated, permalinks not enabled, or REST API not working
+				$test_base_url = $target_url;
+				$test_wp_json = $target_url . 'wp-json/';
+				
 				$error_message = sprintf(
-					/* translators: %s: REST API URL */
-					__( 'Destination site not found or plugin not activated. Please verify: 1) The plugin is activated on the destination site, 2) The URL %s is accessible, 3) Permalinks are enabled (Settings > Permalinks).', 'wp-site-bridge-migration' ),
-					esc_html( $rest_url )
+					/* translators: %1$s: REST API URL, %2$s: Base URL, %3$s: wp-json URL */
+					__( 'REST API endpoint not found (404). Please verify:<br>1) The plugin is <strong>activated</strong> on the destination site<br>2) <strong>Permalinks are enabled</strong> (Settings > Permalinks → Save Changes)<br>3) Test these URLs in your browser:<br>&nbsp;&nbsp;&nbsp;• Base site: <a href="%2$s" target="_blank">%2$s</a><br>&nbsp;&nbsp;&nbsp;• wp-json: <a href="%3$s" target="_blank">%3$s</a><br>&nbsp;&nbsp;&nbsp;• Handshake endpoint: <a href="%1$s" target="_blank">%1$s</a><br>4) If using Docker, try using container name instead (e.g., http://wp-wordpress-blank instead of http://host.docker.internal:8094)', 'wp-site-bridge-migration' ),
+					esc_html( $rest_url ),
+					esc_html( $test_base_url ),
+					esc_html( $test_wp_json )
 				);
 			} elseif ( 500 === $response_code ) {
 				$error_message = __( 'Destination site returned a server error. Please check the destination site\'s error logs.', 'wp-site-bridge-migration' );
