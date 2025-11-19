@@ -536,12 +536,28 @@
 			const $remoteProgress = $('#wpsbm-remote-restore-progress');
 			$remoteProgress.fadeIn();
 			
+			// Update destination URL in the header
+			const $remoteHeader = $remoteProgress.find('h3');
+			if ($remoteHeader.length > 0) {
+				const currentText = $remoteHeader.html();
+				if (currentText.indexOf('→') === -1) {
+					$remoteHeader.html(currentText + ' <span style="font-size: 13px; font-weight: normal; color: #646970; margin-left: 10px;">→ ' + targetUrl + '</span>');
+				}
+			}
+			
 			// Reset remote progress items
 			$remoteProgress.find('.wpsbm-progress-item').each(function() {
 				const $item = $(this);
 				$item.removeClass('wpsbm-progress-done wpsbm-progress-active wpsbm-progress-error');
 				$item.find('.wpsbm-progress-icon').text('○');
 			});
+			
+			// Show status message
+			WPSBMAdmin.showStatusMessage(
+				'Starting remote restoration to: ' + targetUrl,
+				'info',
+				$('#wpsbm-migration-status')
+			);
 			
 			// Get source site URL and token
 			// We need to get source token from server
@@ -609,6 +625,13 @@
 				$item.addClass('wpsbm-progress-active');
 				$item.find('.wpsbm-progress-icon').text('⟳');
 				
+				// Update status message
+				WPSBMAdmin.showStatusMessage(
+					step.label + ' on ' + destinationUrl + '...',
+					'info',
+					$('#wpsbm-migration-status')
+				);
+				
 				// Build destination API URL
 				const apiUrl = destinationUrl.replace(/\/$/, '') + '/wp-json/wpsbm/v1/process_step';
 				
@@ -631,6 +654,13 @@
 							// Mark as done
 							$item.removeClass('wpsbm-progress-active').addClass('wpsbm-progress-done');
 							$item.find('.wpsbm-progress-icon').text('✓');
+							
+							// Update status message
+							WPSBMAdmin.showStatusMessage(
+								step.label + ' completed successfully on ' + destinationUrl,
+								'success',
+								$('#wpsbm-migration-status')
+							);
 							
 							// Move to next step
 							currentStep++;

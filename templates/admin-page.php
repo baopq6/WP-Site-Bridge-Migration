@@ -211,8 +211,29 @@ $show_notice = isset( $_GET['wpsbm_updated'] ) && '1' === $_GET['wpsbm_updated']
 					<!-- Migration Section -->
 					<div id="wpsbm-migration-section" class="wpsbm-migration-section" style="margin-top: 30px;">
 						<h2 class="wpsbm-card-title"><?php esc_html_e( 'Start Migration', 'wp-site-bridge-migration' ); ?></h2>
+						
+						<?php
+						$destination_url = get_option( 'wpsbm_destination_url', '' );
+						$destination_info = get_option( 'wpsbm_destination_info', array() );
+						$destination_site_name = isset( $destination_info['site_name'] ) ? $destination_info['site_name'] : $destination_url;
+						?>
+						
+						<div class="wpsbm-alert wpsbm-alert-info" style="background: #f0f6fc; border-left: 4px solid #2271b1; padding: 16px; margin-bottom: 20px; border-radius: 4px;">
+							<strong style="display: block; margin-bottom: 8px; color: #1d2327;"><?php esc_html_e( 'Migration Target:', 'wp-site-bridge-migration' ); ?></strong>
+							<p style="margin: 0; color: #1d2327; line-height: 1.6;">
+								<?php
+								printf(
+									/* translators: %1$s: Site name, %2$s: Destination URL */
+									esc_html__( 'Migrating to: %1$s (%2$s)', 'wp-site-bridge-migration' ),
+									'<strong>' . esc_html( $destination_site_name ) . '</strong>',
+									'<code style="background: #fff; padding: 2px 6px; border-radius: 3px;">' . esc_html( $destination_url ) . '</code>'
+								);
+								?>
+							</p>
+						</div>
+						
 						<p class="wpsbm-description">
-							<?php esc_html_e( 'Click the button below to start backing up your site data. This process may take several minutes depending on your site size.', 'wp-site-bridge-migration' ); ?>
+							<?php esc_html_e( 'Click the button below to start backing up your site data and migrating it to the destination site. This process may take several minutes depending on your site size.', 'wp-site-bridge-migration' ); ?>
 						</p>
 						
 						<div class="wpsbm-button-group" style="margin-bottom: 20px;">
@@ -247,7 +268,12 @@ $show_notice = isset( $_GET['wpsbm_updated'] ) && '1' === $_GET['wpsbm_updated']
 						
 						<!-- Remote Restoration Progress -->
 						<div id="wpsbm-remote-restore-progress" class="wpsbm-progress-list" style="display: none; margin-top: 30px;">
-							<h3 style="margin-bottom: 15px; font-size: 16px; color: #1d2327;"><?php esc_html_e( 'Remote Restoration', 'wp-site-bridge-migration' ); ?></h3>
+							<h3 style="margin-bottom: 15px; font-size: 16px; color: #1d2327;">
+								<?php esc_html_e( 'Remote Restoration', 'wp-site-bridge-migration' ); ?>
+								<span style="font-size: 13px; font-weight: normal; color: #646970; margin-left: 10px;">
+									→ <?php echo esc_html( $destination_url ); ?>
+								</span>
+							</h3>
 							<div class="wpsbm-progress-item" data-step="remote-database">
 								<span class="wpsbm-progress-icon">○</span>
 								<span class="wpsbm-progress-text"><?php esc_html_e( 'Restoring Database on remote site...', 'wp-site-bridge-migration' ); ?></span>
