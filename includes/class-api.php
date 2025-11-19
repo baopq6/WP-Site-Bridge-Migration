@@ -553,11 +553,13 @@ class API {
 	 * Handle migration status request
 	 *
 	 * Returns current migration status for destination site monitoring
+	 * This endpoint is lightweight - only reads from wp_options (cached)
 	 *
 	 * @param WP_REST_Request $request Request object
 	 * @return WP_REST_Response Response object
 	 */
 	public function handle_migration_status( $request ) {
+		// Use get_option with autoload=true (cached in memory, no DB query after first load)
 		$status = get_option( 'wpsbm_migration_status', array() );
 		
 		// Default status if not set
@@ -571,6 +573,7 @@ class API {
 			);
 		}
 		
+		// Return minimal response (lightweight)
 		return new \WP_REST_Response( $status, 200 );
 	}
 	
