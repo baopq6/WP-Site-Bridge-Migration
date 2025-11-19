@@ -3,7 +3,7 @@ Contributors: pqbao1987
 Tags: migration, backup, move site, transfer, cloning, site migration, wordpress migration
 Requires at least: 5.6
 Tested up to: 6.4
-Stable tag: 1.2.0
+Stable tag: 1.3.0
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
@@ -104,6 +104,13 @@ The current version focuses on single-site migrations. Multisite support may be 
 
 == Changelog ==
 
+= 1.3.0 =
+* Performance: Implemented automatic file cleanup after streaming (Source site) - files are deleted immediately after successful transfer
+* Performance: Enhanced compression level to maximum (level 9) for all ZIP files, reducing file sizes significantly
+* Optimization: Auto-cleanup on Destination site - temporary files (ZIP and SQL) are deleted immediately after extraction/import
+* Improvement: Better storage management - reduces temporary disk usage during migration
+* Fix: Resolved file transfer issues where files weren't being properly cleaned up after migration
+
 = 1.2.0 =
 * Added comprehensive troubleshooting guide in Help & Guide tab
 * Updated plugin author information with GitHub and Facebook links
@@ -132,6 +139,9 @@ The current version focuses on single-site migrations. Multisite support may be 
 * Automatic cleanup
 
 == Upgrade Notice ==
+
+= 1.3.0 =
+Storage optimization update! Files are now automatically deleted after successful transfer, reducing temporary disk usage. ZIP files use maximum compression (level 9) for smaller file sizes. Recommended for all users, especially those with limited disk space.
 
 = 1.1.0 =
 Major performance update! Now supports unlimited database sizes with streaming parser and batch processing. Recommended for all users, especially those with large sites or shared hosting.

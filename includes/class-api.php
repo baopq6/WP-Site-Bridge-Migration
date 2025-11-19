@@ -415,6 +415,15 @@ class API {
 			ob_end_clean();
 		}
 		
+		// Register shutdown function to delete file after streaming completes
+		// This ensures the file is deleted only after successful transfer
+		register_shutdown_function( function() use ( $file_path ) {
+			// Only delete if file still exists (might have been deleted already)
+			if ( file_exists( $file_path ) ) {
+				@unlink( $file_path );
+			}
+		} );
+		
 		// Stream file content
 		readfile( $file_path );
 		

@@ -356,6 +356,11 @@ class Migrator {
 			} else {
 				// Add file to zip
 				$zip->addFile( $file_path, $relative_path );
+				// Set maximum compression level for this file (9 = best compression)
+				$index = $zip->locateName( $relative_path );
+				if ( false !== $index ) {
+					$zip->setCompressionIndex( $index, \ZipArchive::CM_DEFLATE, 9 );
+				}
 			}
 		}
 	}

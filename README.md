@@ -217,8 +217,10 @@ The migration process consists of 5 phases:
 
 ### File Compression
 - Uses PHP `ZipArchive` for compression
+- **Maximum Compression Level (9)**: All ZIP files use level 9 compression for optimal file size reduction
 - Excludes unnecessary files (node_modules, .git, cache, etc.)
 - Preserves directory structure
+- **Auto-Cleanup**: Files are automatically deleted after successful transfer to minimize disk usage
 
 ### Search & Replace (Batch Processing)
 - **Batch Processing**: Splits large operations into 25-second batches to avoid server timeouts
@@ -261,7 +263,15 @@ The migration process consists of 5 phases:
 
 ## 📝 Changelog
 
-### 1.2.0 (Current)
+### 1.3.0 (Current)
+
+* 🚀 **Storage Optimization**: Implemented automatic file cleanup after streaming (Source site) - files are deleted immediately after successful transfer
+* 🚀 **Enhanced Compression**: Maximum compression level (9) for all ZIP files, significantly reducing file sizes
+* ✅ **Auto-Cleanup on Destination**: Temporary files (ZIP and SQL) are automatically deleted immediately after extraction/import
+* ✅ **Better Storage Management**: Reduces temporary disk usage during migration
+* 🐛 **Fixed**: Resolved file transfer issues where files weren't being properly cleaned up after migration
+
+### 1.2.0
 
 * ✅ **Troubleshooting Guide**: Added comprehensive troubleshooting section in Help & Guide tab
 * ✅ **Author Information**: Updated plugin author information with GitHub and Facebook links
